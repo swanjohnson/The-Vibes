@@ -1,77 +1,84 @@
 // netlify/functions/tts.js
+// ElevenLabs TTS with DAILY SERVER-SIDE CACHING (no blobs)
 
-const fs = require("fs");
-const path = require("path");
+const crypto = require("crypto");
 
-const ELEVEN_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_ID = "NihRgaLj2HWAjvZ5XNxl"; // Matilda
+// Simple in-memory cache (persists while function instance is warm)
+const audioCache = global.audioCache || (global.audioCache = {});
 
 exports.handler = async (event) => {
     try {
         const body = JSON.parse(event.body || "{}");
-        const { sign, text } = body;
-
-        if (!text) {
-            return { statusCode: 400, body: "Missing text" };
-        }
+        const sign = body.sign || "aries";
 
         const today = new Date().toISOString().split("T")[0];
-        const fileName = `${sign}-${today}.mp3`;
-        const filePath = path.join("/tmp", fileName);
+        const cacheKey = `${sign}-${today}`;
 
-        // 1️⃣ If audio already exists today → reuse it
-        if (fs.existsSync(filePath)) {
-            const audio = fs.readFileSync(filePath);
+        // ✅ 1. Return cached audio if available
+        if (audioCache[cacheKey]) {
             return {
                 statusCode: 200,
                 headers: {
                     "Content-Type": "audio/mpeg",
                     "Cache-Control": "public, max-age=86400"
                 },
-                body: audio.toString("base64"),
+                body: audioCache[cacheKey],
                 isBase64Encoded: true
             };
         }
 
-        // 2️⃣ Generate new ElevenLabs audio
+        // ✅ 2. Build text to speak
+        const textToSpeak =
+            `Here is your daily horoscope for ${sign}. ` +
+            body.text ||
+            `Your daily horoscope for ${sign}.`;
+
+        // ✅ 3. Call ElevenLabs
         const response = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+            "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL",
             {
                 method: "POST",
                 headers: {
-                    "xi-api-key": ELEVEN_KEY,
-                    "Content-Type": "application/json"
+                    "xi-api-key": process.env.ELEVEN_API_KEY,
+                    "Content-Type": "application/json",
+                    "Accept": "audio/mpeg"
                 },
                 body: JSON.stringify({
-                    text,
-                    model_id: "eleven_multilingual_v2",
+                    text: textToSpeak,
+                    model_id: "eleven_monolingual_v1",
                     voice_settings: {
-                        stability: 0.55,
-                        similarity_boost: 0.7
+                        stability: 0.45,
+                        similarity_boost: 0.85
                     }
                 })
             }
         );
 
-        const buffer = Buffer.from(await response.arrayBuffer());
+        if (!response.ok) {
+            throw new Error("ElevenLabs TTS failed");
+        }
 
-        // 3️⃣ Save audio for the day
-        fs.writeFileSync(filePath, buffer);
+        const audioBuffer = await response.arrayBuffer();
+        const base64Audio = Buffer.from(audioBuffer).toString("base64");
+
+        // ✅ 4. Cache audio for the day
+        audioCache[cacheKey] = base64Audio;
 
         return {
             statusCode: 200,
             headers: {
-                "Content-Type": "audio/mpeg"
+                "Content-Type": "audio/mpeg",
+                "Cache-Control": "public, max-age=86400"
             },
-            body: buffer.toString("base64"),
+            body: base64Audio,
             isBase64Encoded: true
         };
 
     } catch (err) {
-        console.error("TTS error:", err);
+        console.error("TTS Error:", err);
         return {
             statusCode: 500,
-            body: "Audio generation failed"
+            body: JSON.stringify({ error: err.message })
         };
     }
 };
