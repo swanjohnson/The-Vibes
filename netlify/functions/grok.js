@@ -3,7 +3,7 @@
 import { getStore } from "netlify:blobs";
 
 const store = getStore("horoscope-cache");
-const apiKey = "process.env.XAI_API_KEY";
+const apiKey = process.env.XAI_API_KEY;
 
 export async function handler(event) {
     const body = JSON.parse(event.body || "{}");

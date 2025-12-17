@@ -3,13 +3,11 @@ publish = "."
 command = ""
 
 [functions]
-node_bundler = "esbuild"
-
-[functions."*"]
-external_node_modules = ["netlify:blobs"]
+directory = "netlify/functions"
 
 [functions.environment]
 NETLIFY_USE_NODE_20 = "true"
+
 
 
 

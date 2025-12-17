@@ -2,7 +2,7 @@
 
 import { getStore } from "netlify:blobs";
 
-const ELEVEN_API_KEY = "process.env.YOUR_API_KEY";
+const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
 const VOICE_ID = "Xb7hH8MSUJpSbSDYk0k2";   // Matilda (change anytime)
 
 // Persistent Blob storage (shared with Grok caching)
