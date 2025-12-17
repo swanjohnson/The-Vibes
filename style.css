@@ -1,0 +1,162 @@
+/* ======================================
+   GLOBAL PAGE STYLE
+====================================== */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Poppins", sans-serif;
+    overflow-x: hidden;
+    color: #fff;
+    background: black;
+}
+
+/* MAIN CONTENT */
+.container {
+    position: relative;
+    z-index: 10;
+    max-width: 700px;
+    margin: 80px auto;
+    padding: 20px;
+}
+
+/* LOGO */
+.logo {
+    width: 160px;
+    display: block;
+    margin: 0 auto 20px;
+}
+
+/* TITLES */
+h1 {
+    text-align: center;
+    font-size: 44px;
+    margin-bottom: 5px;
+    color: #f3d2ff;
+    opacity: 0;
+    animation: titleGlow 1.2s ease-out forwards;
+}
+
+@keyframes titleGlow {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+h2 {
+    color: #f4c6ff;
+    text-shadow: 0 0 8px rgba(225, 150, 255, 0.7);
+}
+
+/* ======================================
+   GALAXY BACKGROUND LAYERS
+====================================== */
+
+.stars {
+    position: fixed;
+    top: 0; left: 0;
+    width: 200%;
+    height: 200%;
+    background: url('https://i.imgur.com/YKY28eT.png') repeat;
+    animation: starZoom 28s linear infinite;
+    opacity: 0.75;
+    z-index: -3;
+}
+
+@keyframes starZoom {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.6) translateY(-20%); }
+}
+
+.nebula {
+    position: fixed;
+    width: 200%;
+    height: 200%;
+    background: url('https://raw.githubusercontent.com/AllSeeingAI/astro-assets/main/nebula-purple.png')
+        no-repeat center center / cover;
+    opacity: 0.55;
+    animation: nebulaMove 60s linear infinite;
+    z-index: -4;
+}
+
+@keyframes nebulaMove {
+    0% { transform: scale(1.1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1.1); }
+}
+
+.planet {
+    position: fixed;
+    top: 40%;
+    left: -450px;
+    width: 420px;
+    height: 420px;
+    background: url('https://raw.githubusercontent.com/AllSeeingAI/astro-assets/main/planet-purple.png')
+        center/contain no-repeat;
+    animation: planetFly 22s linear infinite;
+    opacity: 0.8;
+    z-index: -2;
+}
+
+@keyframes planetFly {
+    0% { transform: translateX(-450px) scale(.7); }
+    50% { transform: translateX(120vw) scale(1); }
+    100% { transform: translateX(-450px) scale(.7); }
+}
+
+/* ======================================
+   CARDS
+====================================== */
+
+.card {
+    background: rgba(40, 0, 80, 0.55);
+    border: 1px solid rgba(255,180,255,0.35);
+    border-radius: 18px;
+    padding: 20px;
+    margin-top: 22px;
+    backdrop-filter: blur(6px);
+    box-shadow:
+        0 0 20px rgba(200,100,255,0.35),
+        0 0 40px rgba(160,60,255,0.2);
+    user-select: text;
+}
+
+/* ======================================
+   READ / STOP BUTTONS
+====================================== */
+
+.speak-controls {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+#speak-btn,
+#stop-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 20px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+}
+
+#speak-btn {
+    background: rgba(180, 80, 255, 0.9);
+    color: white;
+    box-shadow: 0 0 18px rgba(200,100,255,0.6);
+}
+
+#speak-btn:hover {
+    box-shadow: 0 0 28px rgba(220,120,255,0.9);
+}
+
+#stop-btn {
+    background: rgba(255, 70, 70, 0.85);
+    color: white;
+    box-shadow: 0 0 18px rgba(255,100,100,0.6);
+}
+
+#stop-btn:hover {
+    box-shadow: 0 0 28px rgba(255,120,120,0.9);
+}
