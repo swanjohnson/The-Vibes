@@ -1,48 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AllVibes Horoscope</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
-    <!-- Galaxy Background -->
+    <!-- Background -->
     <div class="nebula"></div>
     <div class="stars"></div>
     <div class="planet"></div>
 
     <div class="container">
-        <img src="logo.png" class="logo" alt="Logo">
+        <img src="logo.png" class="logo" alt="AllVibes Logo" />
 
         <h1 id="zodiac-title">Loading...</h1>
-        <p id="date">Loading date...</p>
+        <p id="date"></p>
 
         <div class="card">
             <h2>Daily Horoscope</h2>
-            <p id="daily-horoscope">Fetching your cosmic guidance...</p>
+            <p id="daily-horoscope">Fetching your cosmic guidance…</p>
         </div>
 
         <div class="card">
             <h2>Love Compatibility</h2>
-            <p id="love-info">Reading your romantic frequency...</p>
+            <p id="love-info"></p>
         </div>
 
         <div class="card">
             <h2>Daily Affirmation</h2>
-            <p id="affirmation">Centering your intention...</p>
+            <p id="affirmation"></p>
         </div>
 
-        <!-- Read & Stop Buttons -->
         <div class="speak-controls">
-    <button id="speak-btn" onclick="playHoroscopeAudio()">🔮 Read My Horoscope</button>
-    <button id="stop-btn" onclick="stopAudio()">✋ Stop Reading</button>
-</div>
-
+            <button id="speak-btn" onclick="playHoroscopeAudio()">
+                🔮 Read My Horoscope
+            </button>
+            <button id="stop-btn" onclick="stopAudio()">
+                ✋ Stop Reading
+            </button>
+        </div>
     </div>
 
+    <!-- 👇 SCRIPT GOES HERE -->
     <script src="script.js"></script>
+
 </body>
 </html>

@@ -1,111 +1,91 @@
 /* ============================
    GET SIGN FROM URL
 ============================ */
-const urlParams = new URLSearchParams(window.location.search);
-let sign = urlParams.get("sign")?.toLowerCase() || "aries";
+const params = new URLSearchParams(window.location.search);
+const sign = (params.get("sign") || "aries").toLowerCase();
 
 const validSigns = [
     "aries","taurus","gemini","cancer","leo","virgo",
     "libra","scorpio","sagittarius","capricorn","aquarius","pisces"
 ];
 
-/* Validate sign */
 if (!validSigns.includes(sign)) {
     document.getElementById("zodiac-title").innerText = "Invalid Sign";
     document.getElementById("daily-horoscope").innerText =
         "Please scan your bracelet again.";
-    document.getElementById("love-info").innerText = "";
-    document.getElementById("affirmation").innerText = "";
-} else {
-    document.getElementById("zodiac-title").innerText =
-        sign.charAt(0).toUpperCase() + sign.slice(1);
-
-    document.getElementById("date").innerText =
-        new Date().toLocaleDateString("en-US", {
-            weekday: "long", month: "long", day: "numeric"
-        });
+    throw new Error("Invalid zodiac sign");
 }
 
+document.getElementById("zodiac-title").innerText =
+    sign.charAt(0).toUpperCase() + sign.slice(1);
+
+document.getElementById("date").innerText =
+    new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric"
+    });
+
 /* ============================
-   FETCH HOROSCOPE FROM GROK
+   LOAD HOROSCOPE
 ============================ */
-async function loadHoroscope(sign) {
-    try {
-        const res = await fetch("/.netlify/functions/grok", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sign })
-        });
+async function loadHoroscope() {
+    const res = await fetch("/.netlify/functions/grok", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sign })
+    });
 
-        const data = await res.json();
-        const text = data.output;
+    const data = await res.json();
+    const text = data.output;
 
-        function extract(label) {
-            const regex = new RegExp(
-                `${label}\\s*(?:[:\\-—]*?)\\s*(.*?)(?=\\n\\s*(Daily|Love|Affirmation)|$)`,
-                "is"
-            );
-            const match = text.match(regex);
-            if (!match) return "";
-            let cleaned = match[1].trim();
-            cleaned = cleaned.replace(/^[:\-—\*•\s]+/, "");
-            return cleaned;
-        }
-
-        document.getElementById("daily-horoscope").innerText = extract("Daily");
-        document.getElementById("love-info").innerText = extract("Love");
-        document.getElementById("affirmation").innerText = extract("Affirmation");
-
-    } catch {
-        document.getElementById("daily-horoscope").innerText =
-            "Unable to load guidance.";
+    function extract(label) {
+        const regex = new RegExp(
+            `${label}:\\s*([\\s\\S]*?)(?=\\n(?:Daily|Love|Affirmation):|$)`,
+            "i"
+        );
+        const match = text.match(regex);
+        return match ? match[1].trim() : "";
     }
+
+    document.getElementById("daily-horoscope").innerText = extract("Daily");
+    document.getElementById("love-info").innerText = extract("Love");
+    document.getElementById("affirmation").innerText = extract("Affirmation");
 }
 
+loadHoroscope();
+
 /* ============================
-   ELEVENLABS AUDIO TTS
+   AUDIO (ELEVENLABS)
 ============================ */
-let audioPlayer = null;
+let audio = null;
 
 async function playHoroscopeAudio() {
-    stopAudio(); // stop previous audio
-
-    const daily = document.getElementById("daily-horoscope").innerText;
-    const love = document.getElementById("love-info").innerText;
-    const affirmation = document.getElementById("affirmation").innerText;
-
     const fullText =
-        `Daily Horoscope: ${daily}. Love Insight: ${love}. Affirmation: ${affirmation}.`;
+        "Daily Horoscope. " +
+        document.getElementById("daily-horoscope").innerText + ". " +
+        "Love Compatibility. " +
+        document.getElementById("love-info").innerText + ". " +
+        "Affirmation. " +
+        document.getElementById("affirmation").innerText;
 
-    try {
-        const res = await fetch("/.netlify/functions/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: fullText, sign })
-        });
+    const res = await fetch("/.netlify/functions/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sign, text: fullText })
+    });
 
-        const data = await res.json();
+    const base64 = await res.text();
+    const blob = new Blob(
+        [Uint8Array.from(atob(base64), c => c.charCodeAt(0))],
+        { type: "audio/mpeg" }
+    );
 
-        if (!data.audio) {
-            console.error("TTS error:", data);
-            return;
-        }
-
-        const audioSrc = "data:audio/mp3;base64," + data.audio;
-        audioPlayer = new Audio(audioSrc);
-        audioPlayer.play();
-
-    } catch (err) {
-        console.error("Audio play error:", err);
-    }
+    if (audio) audio.pause();
+    audio = new Audio(URL.createObjectURL(blob));
+    audio.play();
 }
 
 function stopAudio() {
-    if (audioPlayer) {
-        audioPlayer.pause();
-        audioPlayer.currentTime = 0;
-    }
+    if (audio) audio.pause();
 }
-
-/* INIT */
-if (validSigns.includes(sign)) loadHoroscope(sign);
