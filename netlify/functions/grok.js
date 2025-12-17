@@ -1,69 +1,74 @@
 // netlify/functions/grok.js
 
+const fs = require("fs");
+const path = require("path");
+
+const API_KEY = process.env.XAI_API_KEY;
+
 exports.handler = async (event) => {
-  try {
-    const body = JSON.parse(event.body || "{}");
-    const sign = body.sign || "aries";
+    try {
+        const body = JSON.parse(event.body || "{}");
+        const sign = body.sign || "aries";
 
-    const apiKey = process.env.XAI_API_KEY;
-    if (!apiKey) {
-      throw new Error("XAI_API_KEY is missing");
-    }
+        const today = new Date().toISOString().split("T")[0];
+        const cacheFile = path.join("/tmp", `${sign}-${today}.json`);
 
-    const prompt = `
-Write a daily horoscope for ${sign} with full creative freedom, in the natural style used in the Grok app.
+        // 1️⃣ Check cache
+        if (fs.existsSync(cacheFile)) {
+            const cached = fs.readFileSync(cacheFile, "utf8");
+            return {
+                statusCode: 200,
+                body: cached
+            };
+        }
+
+        // 2️⃣ Build free-form Grok prompt
+        const prompt = `
+Write a daily horoscope for ${sign} with complete creative freedom, exactly like you would in the Grok app.
+
+STYLE RULES:
+- Be expressive, intuitive, and human
+- Avoid predictable openings
+- Do NOT repeat previous patterns
+- Tone can be poetic, insightful, grounded, or surprising
+- No emojis, no markdown
 
 FORMAT (plain text only):
 Daily:
 Love:
 Affirmation:
-
-No markdown. No emojis.
 `;
 
-    const response = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "grok-3-mini",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+        const response = await fetch("https://api.x.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "grok-3-mini",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
 
-    const rawText = await response.text();
-    let data;
+        const data = await response.json();
+        const output = data?.choices?.[0]?.message?.content || "";
 
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      console.error("xAI returned non-JSON:", rawText);
-      throw new Error("Invalid JSON from xAI");
+        const payload = JSON.stringify({ output });
+
+        // 3️⃣ Save cache for the day
+        fs.writeFileSync(cacheFile, payload, "utf8");
+
+        return {
+            statusCode: 200,
+            body: payload
+        };
+
+    } catch (err) {
+        console.error("Grok error:", err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Failed to generate horoscope" })
+        };
     }
-
-    // 🔥 THIS IS THE CRITICAL GUARD
-    if (!data?.choices?.[0]?.message?.content) {
-      console.error("Unexpected xAI response:", data);
-      throw new Error("Unexpected xAI response shape");
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        output: data.choices[0].message.content
-      })
-    };
-
-  } catch (err) {
-    console.error("Grok function error:", err);
-
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: err.message
-      })
-    };
-  }
 };
