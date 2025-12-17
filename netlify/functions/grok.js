@@ -1,13 +1,17 @@
 // netlify/functions/grok.js
 
 exports.handler = async (event) => {
-  const body = JSON.parse(event.body || "{}");
-  const sign = body.sign || "aries";
+  try {
+    const body = JSON.parse(event.body || "{}");
+    const sign = body.sign || "aries";
 
-  const apiKey = process.env.XAI_API_KEY;
+    const apiKey = process.env.XAI_API_KEY;
+    if (!apiKey) {
+      throw new Error("XAI_API_KEY is missing");
+    }
 
-  const prompt = `
-Write a daily horoscope for ${sign} with full creative freedom, in the natural style you use in the Grok app.
+    const prompt = `
+Write a daily horoscope for ${sign} with full creative freedom, in the natural style used in the Grok app.
 
 FORMAT (plain text only):
 Daily:
@@ -17,7 +21,6 @@ Affirmation:
 No markdown. No emojis.
 `;
 
-  try {
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -30,7 +33,21 @@ No markdown. No emojis.
       })
     });
 
-    const data = await response.json();
+    const rawText = await response.text();
+    let data;
+
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error("xAI returned non-JSON:", rawText);
+      throw new Error("Invalid JSON from xAI");
+    }
+
+    // 🔥 THIS IS THE CRITICAL GUARD
+    if (!data?.choices?.[0]?.message?.content) {
+      console.error("Unexpected xAI response:", data);
+      throw new Error("Unexpected xAI response shape");
+    }
 
     return {
       statusCode: 200,
@@ -38,10 +55,15 @@ No markdown. No emojis.
         output: data.choices[0].message.content
       })
     };
+
   } catch (err) {
+    console.error("Grok function error:", err);
+
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({
+        error: err.message
+      })
     };
   }
 };
