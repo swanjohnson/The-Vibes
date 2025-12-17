@@ -58,27 +58,37 @@ loadHoroscope();
 let audio = null;
 
 async function playHoroscopeAudio() {
-  if (audio) {
+    const res = await fetch("/.netlify/functions/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sign })
+    });
+
+    if (!res.ok) {
+        throw new Error("Audio request failed");
+    }
+
+    const base64 = await res.text();
+
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([bytes], { type: "audio/mpeg" });
+    const url = URL.createObjectURL(blob);
+
+    audio = new Audio(url);
     audio.play();
-    return;
-  }
-
-  const res = await fetch("/.netlify/functions/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sign })
-  });
-
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-
-  audio = new Audio(url);
-  audio.play();
 }
 
 function stopAudio() {
-  if (audio) {
-    audio.pause();
-    audio.currentTime = 0;
-  }
+    if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+    }
 }
+
+

@@ -1,4 +1,5 @@
 // netlify/functions/tts.js
+// ElevenLabs TTS — Matilda (locked)
 
 exports.handler = async (event) => {
     try {
@@ -8,11 +9,10 @@ exports.handler = async (event) => {
             return { statusCode: 400, body: "Missing sign" };
         }
 
-        const textToSpeak =
-            `Here is your daily horoscope for ${sign}.`;
+        const textToSpeak = `Here is your daily horoscope for ${sign}.`;
 
         const response = await fetch(
-            "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL/stream",
+            "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL",
             {
                 method: "POST",
                 headers: {
@@ -25,26 +25,29 @@ exports.handler = async (event) => {
                     model_id: "eleven_monolingual_v1",
                     voice_settings: {
                         stability: 0.45,
-                        similarity_boost: 0.85
+                        similarity_boost: 0.85,
+                        style: 0.35,
+                        use_speaker_boost: true
                     }
                 })
             }
         );
 
         if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(errText);
+            const err = await response.text();
+            throw new Error(err);
         }
 
         const audioBuffer = await response.arrayBuffer();
+        const base64Audio = Buffer.from(audioBuffer).toString("base64");
 
         return {
             statusCode: 200,
             headers: {
-                "Content-Type": "audio/mpeg",
-                "Cache-Control": "no-store"
+                "Content-Type": "audio/mpeg"
             },
-            body: Buffer.from(audioBuffer).toString("binary")
+            body: base64Audio,
+            isBase64Encoded: true
         };
 
     } catch (err) {
