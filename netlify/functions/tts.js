@@ -1,41 +1,18 @@
 // netlify/functions/tts.js
-// ElevenLabs TTS with DAILY SERVER-SIDE CACHING (no blobs)
-
-const crypto = require("crypto");
-
-// Simple in-memory cache (persists while function instance is warm)
-const audioCache = global.audioCache || (global.audioCache = {});
 
 exports.handler = async (event) => {
     try {
-        const body = JSON.parse(event.body || "{}");
-        const sign = body.sign || "aries";
+        const { sign } = JSON.parse(event.body || "{}");
 
-        const today = new Date().toISOString().split("T")[0];
-        const cacheKey = `${sign}-${today}`;
-
-        // ✅ 1. Return cached audio if available
-        if (audioCache[cacheKey]) {
-            return {
-                statusCode: 200,
-                headers: {
-                    "Content-Type": "audio/mpeg",
-                    "Cache-Control": "public, max-age=86400"
-                },
-                body: audioCache[cacheKey],
-                isBase64Encoded: true
-            };
+        if (!sign) {
+            return { statusCode: 400, body: "Missing sign" };
         }
 
-        // ✅ 2. Build text to speak
         const textToSpeak =
-            `Here is your daily horoscope for ${sign}. ` +
-            body.text ||
-            `Your daily horoscope for ${sign}.`;
+            `Here is your daily horoscope for ${sign}.`;
 
-        // ✅ 3. Call ElevenLabs
         const response = await fetch(
-            "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL",
+            "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL/stream",
             {
                 method: "POST",
                 headers: {
@@ -55,30 +32,26 @@ exports.handler = async (event) => {
         );
 
         if (!response.ok) {
-            throw new Error("ElevenLabs TTS failed");
+            const errText = await response.text();
+            throw new Error(errText);
         }
 
         const audioBuffer = await response.arrayBuffer();
-        const base64Audio = Buffer.from(audioBuffer).toString("base64");
-
-        // ✅ 4. Cache audio for the day
-        audioCache[cacheKey] = base64Audio;
 
         return {
             statusCode: 200,
             headers: {
                 "Content-Type": "audio/mpeg",
-                "Cache-Control": "public, max-age=86400"
+                "Cache-Control": "no-store"
             },
-            body: base64Audio,
-            isBase64Encoded: true
+            body: Buffer.from(audioBuffer).toString("binary")
         };
 
     } catch (err) {
-        console.error("TTS Error:", err);
+        console.error("TTS error:", err);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: err.message })
+            body: err.message
         };
     }
 };
