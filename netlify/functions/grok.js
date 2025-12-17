@@ -1,13 +1,13 @@
 // netlify/functions/grok.js
 
-export async function handler(event) {
+exports.handler = async (event) => {
   const body = JSON.parse(event.body || "{}");
   const sign = body.sign || "aries";
 
   const apiKey = process.env.XAI_API_KEY;
 
   const prompt = `
-Write a daily horoscope for ${sign} in the same expressive, free-flowing style you use in the Grok app.
+Write a daily horoscope for ${sign} with full creative freedom, in the natural style you use in the Grok app.
 
 FORMAT (plain text only):
 Daily:
@@ -22,7 +22,7 @@ No markdown. No emojis.
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": \`Bearer ${apiKey}\`
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: "grok-3-mini",
@@ -31,11 +31,12 @@ No markdown. No emojis.
     });
 
     const data = await response.json();
-    const output = data?.choices?.[0]?.message?.content;
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ output })
+      body: JSON.stringify({
+        output: data.choices[0].message.content
+      })
     };
   } catch (err) {
     return {
@@ -43,4 +44,4 @@ No markdown. No emojis.
       body: JSON.stringify({ error: err.message })
     };
   }
-}
+};

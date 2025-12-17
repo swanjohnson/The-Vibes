@@ -8,7 +8,7 @@ const VOICE_ID = "Xb7hH8MSUJpSbSDYk0k2";   // Matilda (change anytime)
 // Persistent Blob storage (shared with Grok caching)
 const store = getStore("horoscope-cache");
 
-export async function handler(event) {
+exports.handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     const text = body.text || "";
     const sign = body.sign || "aries";
