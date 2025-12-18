@@ -14,7 +14,10 @@ export const handler = async (event) => {
     const today = new Date().toISOString().split("T")[0];
     const cacheKey = `${sign}-${today}`;
 
-    const store = getStore("daily-horoscopes");
+    const store = getStore("daily-horoscopes", {
+  siteID: process.env.NETLIFY_SITE_ID,
+  token: process.env.NETLIFY_AUTH_TOKEN
+});
 
     // ===== CACHE HIT =====
     const cached = await store.get(cacheKey, { type: "json" });
