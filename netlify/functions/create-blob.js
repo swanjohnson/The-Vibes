@@ -1,8 +1,7 @@
-import { getStore } from "@netlify/blobs";
+const { getStore } = require("@netlify/blobs");
 
-export const handler = async () => {
+exports.handler = async () => {
   const store = getStore("daily-horoscopes");
-
   await store.set("init", "ok");
 
   return {
