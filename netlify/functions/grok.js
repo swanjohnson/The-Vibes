@@ -1,5 +1,5 @@
 // netlify/functions/grok.js
-// Daily Horoscope Generator using Grok + Persistent Netlify Blobs cache
+// Grok Horoscope with Persistent Netlify Blobs Cache
 
 import { getStore } from "@netlify/blobs";
 
@@ -10,13 +10,13 @@ export const handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     const sign = body.sign || "aries";
 
-    // ===== DAILY PERSISTENT CACHE KEY =====
+    // ===== DAILY CACHE KEY =====
     const today = new Date().toISOString().split("T")[0];
     const cacheKey = `${sign}-${today}`;
 
     const store = getStore("daily-horoscopes");
 
-    // ===== CACHE HIT (PERSISTENT ACROSS ALL INSTANCES) =====
+    // ===== CACHE HIT =====
     const cached = await store.get(cacheKey, { type: "json" });
     if (cached) {
       return {
@@ -25,7 +25,7 @@ export const handler = async (event) => {
       };
     }
 
-    // ===== USER PROMPT (OPEN BUT GROUNDED) =====
+    // ===== USER PROMPT (GROK-APP-LIKE) =====
     const prompt = `
 Write a daily horoscope for ${sign}.
 
@@ -45,8 +45,7 @@ Avoid:
 - Advice or instructions
 - Predictions of outcomes
 
-Use this structure as a guide (not rigid):
-
+Structure (flexible):
 Daily:
 Love:
 Affirmation:
@@ -70,7 +69,7 @@ No conclusions.
           {
             role: "system",
             content: `
-You respond the way Grok does in the Grok app when answering a casual question.
+You respond the way Grok does in the Grok app.
 
 Tone:
 - Natural
@@ -82,15 +81,11 @@ Style:
 - Expressive but not poetic
 - Intuitive without mysticism
 - Clear without sounding formal
-- Varied sentence rhythm
-
-You may use light imagery if it feels natural,
-but avoid flowery language or symbolism.
 
 Avoid:
-- Overly poetic or abstract writing
 - Horoscope clichés
 - Advice or directives
+- Abstract symbolism
 - Predictions of concrete outcomes
 
 Do not mention AI, policies, or limitations.
@@ -109,7 +104,7 @@ Do not mention AI, policies, or limitations.
 
     const payload = { output };
 
-    // ===== SAVE TO NETLIFY BLOBS (TRUE DAILY LOCK) =====
+    // ===== SAVE PERSISTENT CACHE =====
     await store.set(cacheKey, payload);
 
     return {
