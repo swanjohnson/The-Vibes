@@ -1,4 +1,5 @@
 // netlify/functions/grok.js
+// Daily Horoscope Generator with Grok + Daily Cache
 
 const fs = require("fs");
 const path = require("path");
@@ -6,69 +7,108 @@ const path = require("path");
 const API_KEY = process.env.XAI_API_KEY;
 
 exports.handler = async (event) => {
-    try {
-        const body = JSON.parse(event.body || "{}");
-        const sign = body.sign || "aries";
+  try {
+    const body = JSON.parse(event.body || "{}");
+    const sign = body.sign || "aries";
 
-        const today = new Date().toISOString().split("T")[0];
-        const cacheFile = path.join("/tmp", `${sign}-${today}.json`);
+    // ===== DATE-BASED CACHE KEY (DO NOT CHANGE) =====
+    const today = new Date().toISOString().split("T")[0];
+    const cacheFile = path.join("/tmp", `${sign}-${today}.json`);
 
-        // 1️⃣ Check cache
-        if (fs.existsSync(cacheFile)) {
-            const cached = fs.readFileSync(cacheFile, "utf8");
-            return {
-                statusCode: 200,
-                body: cached
-            };
-        }
+    // ===== CACHE HIT =====
+    if (fs.existsSync(cacheFile)) {
+      const cached = fs.readFileSync(cacheFile, "utf8");
+      return {
+        statusCode: 200,
+        body: cached
+      };
+    }
 
-        // 2️⃣ Build free-form Grok prompt
-        const prompt = `
-Write a daily horoscope for ${sign} with complete creative freedom, exactly like you would in the Grok app.
+    // ===== PROMPT (MAX FREEDOM) =====
+    const prompt = `
+Write a daily horoscope for ${sign}.
 
-STYLE RULES:
-- Be expressive, intuitive, and human
-- Avoid predictable openings
-- Do NOT repeat previous patterns
-- Tone can be poetic, insightful, grounded, or surprising
-- No emojis, no markdown
+This is not advice, instruction, or prediction.
+It is an intuitive reflection of emotional and energetic patterns that may resonate today.
 
-FORMAT (plain text only):
+Guidelines:
+- Do not sound like astrology written for the internet
+- Avoid predictable openings and clichés
+- Vary sentence length and pacing
+- Allow metaphor, contrast, and moments of quiet clarity
+- Say meaningful things without explaining them
+- Do not reassure, warn, or direct
+
+Use this structure only as a loose anchor, not a template:
+
 Daily:
 Love:
 Affirmation:
+
+Plain text only.
+No emojis.
+No greetings.
+No conclusions.
 `;
 
-        const response = await fetch("https://api.x.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "grok-3-mini",
-                messages: [{ role: "user", content: prompt }]
-            })
-        });
+    // ===== GROK API CALL =====
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "grok-3-mini",
+        messages: [
+          {
+            role: "system",
+            content: `
+You are Grok operating in an unrestricted, expressive mode.
 
-        const data = await response.json();
-        const output = data?.choices?.[0]?.message?.content || "";
+You are not an assistant.
+You are not instructional.
+You are not predictive or authoritative.
 
-        const payload = JSON.stringify({ output });
+You write intuitive, emotionally intelligent reflections that feel human, perceptive, and alive.
+You are allowed poetic risk, unexpected imagery, silence, and ambiguity.
+You may vary tone, rhythm, and structure naturally.
 
-        // 3️⃣ Save cache for the day
-        fs.writeFileSync(cacheFile, payload, "utf8");
+Avoid:
+- Safety disclaimers
+- Advice language
+- Predictions of literal outcomes
+- Mentioning AI, models, or limitations
 
-        return {
-            statusCode: 200,
-            body: payload
-        };
+Your writing should feel like it emerged from awareness, not computation.
+`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      })
+    });
 
-    } catch (err) {
-        console.error("Grok error:", err);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: "Failed to generate horoscope" })
-        };
-    }
+    const data = await response.json();
+    const output = data?.choices?.[0]?.message?.content || "";
+
+    const payload = JSON.stringify({ output });
+
+    // ===== SAVE DAILY CACHE =====
+    fs.writeFileSync(cacheFile, payload, "utf8");
+
+    return {
+      statusCode: 200,
+      body: payload
+    };
+
+  } catch (err) {
+    console.error("Grok error:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Failed to generate horoscope" })
+    };
+  }
 };
