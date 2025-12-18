@@ -1,0 +1,1 @@
+import { getStore } from @netlify/blobs; export default async () => { const store = getStore(vibe-store); await store.set(hello, world); return new Response(Store made); }; export const config = { path: /create-blob };
