@@ -28,7 +28,7 @@ exports.handler = async (event) => {
 
     // 2️⃣ CALL ELEVENLABS (ONLY ON CACHE MISS)
     const response = await fetch(
-      "https://api.elevenlabs.io/v1/text-to-speech/jbEI5QkrMSKWeDlP27MV",
+      "https://api.elevenlabs.io/v1/text-to-speech/XrExE9yKIg1WjnnlVkGX",
       {
         method: "POST",
         headers: {

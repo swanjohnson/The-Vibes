@@ -1,45 +1,51 @@
 // netlify/functions/grok.js
-// Daily Horoscope Generator with Grok + Daily Cache
+// Daily Horoscope Generator using Grok + Persistent Netlify Blobs cache
 
-const fs = require("fs");
-const path = require("path");
+import { getStore } from "@netlify/blobs";
 
 const API_KEY = process.env.XAI_API_KEY;
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
     const sign = body.sign || "aries";
 
-    // ===== DATE-BASED CACHE KEY (DO NOT CHANGE) =====
+    // ===== DAILY PERSISTENT CACHE KEY =====
     const today = new Date().toISOString().split("T")[0];
-    const cacheFile = path.join("/tmp", `${sign}-${today}.json`);
+    const cacheKey = `${sign}-${today}`;
 
-    // ===== CACHE HIT =====
-    if (fs.existsSync(cacheFile)) {
-      const cached = fs.readFileSync(cacheFile, "utf8");
+    const store = getStore("daily-horoscopes");
+
+    // ===== CACHE HIT (PERSISTENT ACROSS ALL INSTANCES) =====
+    const cached = await store.get(cacheKey, { type: "json" });
+    if (cached) {
       return {
         statusCode: 200,
-        body: cached
+        body: JSON.stringify(cached)
       };
     }
 
-    // ===== PROMPT (MAX FREEDOM) =====
+    // ===== USER PROMPT (OPEN BUT GROUNDED) =====
     const prompt = `
 Write a daily horoscope for ${sign}.
 
-This is not advice, instruction, or prediction.
-It is an intuitive reflection of emotional and energetic patterns that may resonate today.
+This should feel like how Grok responds in the Grok app when someone casually asks,
+"what is my horoscope?"
 
 Guidelines:
-- Do not sound like astrology written for the internet
-- Avoid predictable openings and clichés
-- Vary sentence length and pacing
-- Allow metaphor, contrast, and moments of quiet clarity
-- Say meaningful things without explaining them
-- Do not reassure, warn, or direct
+- Natural and conversational
+- Confident and human
+- Intuitive but grounded
+- Clear and readable
 
-Use this structure only as a loose anchor, not a template:
+Avoid:
+- Overly poetic language
+- Mystical symbolism
+- Horoscope clichés
+- Advice or instructions
+- Predictions of outcomes
+
+Use this structure as a guide (not rigid):
 
 Daily:
 Love:
@@ -64,23 +70,30 @@ No conclusions.
           {
             role: "system",
             content: `
-You are Grok operating in an unrestricted, expressive mode.
+You respond the way Grok does in the Grok app when answering a casual question.
 
-You are not an assistant.
-You are not instructional.
-You are not predictive or authoritative.
+Tone:
+- Natural
+- Conversational
+- Confident
+- Human
 
-You write intuitive, emotionally intelligent reflections that feel human, perceptive, and alive.
-You are allowed poetic risk, unexpected imagery, silence, and ambiguity.
-You may vary tone, rhythm, and structure naturally.
+Style:
+- Expressive but not poetic
+- Intuitive without mysticism
+- Clear without sounding formal
+- Varied sentence rhythm
+
+You may use light imagery if it feels natural,
+but avoid flowery language or symbolism.
 
 Avoid:
-- Safety disclaimers
-- Advice language
-- Predictions of literal outcomes
-- Mentioning AI, models, or limitations
+- Overly poetic or abstract writing
+- Horoscope clichés
+- Advice or directives
+- Predictions of concrete outcomes
 
-Your writing should feel like it emerged from awareness, not computation.
+Do not mention AI, policies, or limitations.
 `
           },
           {
@@ -94,14 +107,14 @@ Your writing should feel like it emerged from awareness, not computation.
     const data = await response.json();
     const output = data?.choices?.[0]?.message?.content || "";
 
-    const payload = JSON.stringify({ output });
+    const payload = { output };
 
-    // ===== SAVE DAILY CACHE =====
-    fs.writeFileSync(cacheFile, payload, "utf8");
+    // ===== SAVE TO NETLIFY BLOBS (TRUE DAILY LOCK) =====
+    await store.set(cacheKey, payload);
 
     return {
       statusCode: 200,
-      body: payload
+      body: JSON.stringify(payload)
     };
 
   } catch (err) {
