@@ -11,8 +11,9 @@ const validSigns = [
 
 if (!validSigns.includes(sign)) {
   document.getElementById("zodiac-title").innerText = "Invalid Sign";
-  document.getElementById("daily-horoscope").innerText = "Please scan again.";
-  throw new Error("Invalid sign");
+  document.getElementById("daily-horoscope").innerText =
+    "Please scan your bracelet again.";
+  throw new Error("Invalid zodiac sign");
 }
 
 document.getElementById("zodiac-title").innerText =
@@ -20,7 +21,9 @@ document.getElementById("zodiac-title").innerText =
 
 document.getElementById("date").innerText =
   new Date().toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric"
+    weekday: "long",
+    month: "long",
+    day: "numeric"
   });
 
 /* ============================
@@ -53,36 +56,44 @@ async function loadHoroscope() {
 loadHoroscope();
 
 /* ============================
-   ELEVENLABS AUDIO (CACHED)
+   ELEVENLABS AUDIO
 ============================ */
 let audio = null;
 
 async function playHoroscopeAudio() {
-    const res = await fetch("/.netlify/functions/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sign })
-    });
+  const daily = document.getElementById("daily-horoscope").innerText;
+  const love = document.getElementById("love-info").innerText;
+  const affirmation = document.getElementById("affirmation").innerText;
 
-    if (!res.ok) {
-        throw new Error("Audio request failed");
-    }
+  const fullText =
+    `Daily Horoscope. ${daily}. ` +
+    `Love Compatibility. ${love}. ` +
+    `Daily Affirmation. ${affirmation}.`;
 
-    // IMPORTANT: Netlify already decoded base64 → this is binary
-    const arrayBuffer = await res.arrayBuffer();
-    const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
-    const url = URL.createObjectURL(blob);
+  const res = await fetch("/.netlify/functions/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sign,
+      text: fullText
+    })
+  });
 
-    audio = new Audio(url);
-    audio.play();
+  if (!res.ok) {
+    throw new Error("Failed to load audio");
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+  const url = URL.createObjectURL(blob);
+
+  audio = new Audio(url);
+  audio.play();
 }
 
 function stopAudio() {
-    if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-    }
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
 }
-
-
-
