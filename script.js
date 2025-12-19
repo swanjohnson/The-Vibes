@@ -1,5 +1,5 @@
 /* ============================
-   GET SIGN FROM URL
+   SIGN FROM URL
 ============================ */
 const params = new URLSearchParams(window.location.search);
 const sign = (params.get("sign") || "aries").toLowerCase();
@@ -10,27 +10,13 @@ const validSigns = [
 ];
 
 if (!validSigns.includes(sign)) {
-  document.getElementById("zodiac-title").innerText = "Invalid Sign";
   document.getElementById("daily-horoscope").innerText =
-    "Please scan your bracelet again.";
-  throw new Error("Invalid zodiac sign");
+    "Invalid zodiac sign.";
+  throw new Error("Invalid sign");
 }
 
 /* ============================
-   PAGE TITLES
-============================ */
-document.getElementById("zodiac-title").innerText =
-  sign.charAt(0).toUpperCase() + sign.slice(1);
-
-document.getElementById("date").innerText =
-  new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric"
-  });
-
-/* ============================
-   LOAD GROK READING
+   LOAD GROK
 ============================ */
 async function loadHoroscope() {
   const res = await fetch("/.netlify/functions/grok", {
@@ -43,46 +29,69 @@ async function loadHoroscope() {
   let text = data.output || "";
 
   // ----------------------------
-  // CLEANUP + NORMALIZATION
+  // NORMALIZE
   // ----------------------------
-
   text = text
-    // remove markdown junk (### etc)
     .replace(/#{2,}/g, "")
-
-    // normalize headers
-    .replace(/\bHoroscope:?\s*/gi, "<span class='section-header'>Horoscope</span>\n")
-    .replace(/\bDaily:?\s*/gi, "<span class='section-header'>Horoscope</span>\n")
-    .replace(/\bLove:?\s*/gi, "\n<span class='section-header'>Love</span>\n")
-    .replace(/\bAffirmation:?\s*/gi, "\n<span class='section-header'>Affirmation</span>\n")
-
-    // REMOVE repeated word at start of paragraph after header
-    .replace(
-      /(<span class='section-header'>Horoscope<\/span>\s*)(Horoscope[, ]+)/gi,
-      "$1"
-    )
-    .replace(
-      /(<span class='section-header'>Love<\/span>\s*)(Love[, ]+)/gi,
-      "$1"
-    )
-    .replace(
-      /(<span class='section-header'>Affirmation<\/span>\s*)(Affirmation[, ]+)/gi,
-      "$1"
-    )
-
-    // collapse excessive newlines
+    .replace(/\r/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  document.getElementById("daily-horoscope").innerHTML = text;
+  // ----------------------------
+  // FORCE STRUCTURE
+  // ----------------------------
+  const sections = {
+    Horoscope: "",
+    Love: "",
+    Affirmation: ""
+  };
+
+  let current = null;
+
+  text.split("\n").forEach(line => {
+    const clean = line.trim();
+
+    if (/^horoscope$/i.test(clean)) {
+      current = "Horoscope";
+      return;
+    }
+    if (/^love$/i.test(clean)) {
+      current = "Love";
+      return;
+    }
+    if (/^affirmation$/i.test(clean)) {
+      current = "Affirmation";
+      return;
+    }
+
+    if (current) {
+      sections[current] += clean + " ";
+    }
+  });
+
+  // ----------------------------
+  // RENDER
+  // ----------------------------
+  const output = `
+    <span class="section-header">HOROSCOPE</span>
+    <p>${sections.Horoscope.trim()}</p>
+
+    <span class="section-header">LOVE</span>
+    <p>${sections.Love.trim()}</p>
+
+    <span class="section-header">AFFIRMATION</span>
+    <p>${sections.Affirmation.trim()}</p>
+  `;
+
+  document.getElementById("daily-horoscope").innerHTML = output;
 }
 
 loadHoroscope();
 
 /* ============================
-   ELEVENLABS AUDIO
+   AUDIO
 ============================ */
-let audio = null;
+let audio;
 
 async function playHoroscopeAudio() {
   const text = document.getElementById("daily-horoscope").innerText;
@@ -93,13 +102,8 @@ async function playHoroscopeAudio() {
     body: JSON.stringify({ sign, text })
   });
 
-  if (!res.ok) throw new Error("Failed to load audio");
-
-  const arrayBuffer = await res.arrayBuffer();
-  const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
-  const url = URL.createObjectURL(blob);
-
-  audio = new Audio(url);
+  const buffer = await res.arrayBuffer();
+  audio = new Audio(URL.createObjectURL(new Blob([buffer])));
   audio.play();
 }
 
