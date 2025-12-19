@@ -16,6 +16,9 @@ if (!validSigns.includes(sign)) {
   throw new Error("Invalid zodiac sign");
 }
 
+/* ============================
+   PAGE TITLES
+============================ */
 document.getElementById("zodiac-title").innerText =
   sign.charAt(0).toUpperCase() + sign.slice(1);
 
@@ -27,7 +30,7 @@ document.getElementById("date").innerText =
   });
 
 /* ============================
-   LOAD HOROSCOPE (SINGLE READING)
+   LOAD GROK READING
 ============================ */
 async function loadHoroscope() {
   const res = await fetch("/.netlify/functions/grok", {
@@ -39,13 +42,14 @@ async function loadHoroscope() {
   const data = await res.json();
   let text = data.output || "";
 
-  // ---- Clean section labels (remove colons, keep words)
+  // Replace section labels + style them
   text = text
-    .replace(/\bDaily:\s*/gi, "Daily\n")
-    .replace(/\bLove:\s*/gi, "\nLove\n")
-    .replace(/\bAffirmation:\s*/gi, "\nAffirmation\n");
+    .replace(/\bHoroscope:?\s*/gi, "<span class='section-header'>Horoscope</span>\n")
+    .replace(/\bDaily:?\s*/gi, "<span class='section-header'>Horoscope</span>\n")
+    .replace(/\bLove:?\s*/gi, "\n<span class='section-header'>Love</span>\n")
+    .replace(/\bAffirmation:?\s*/gi, "\n<span class='section-header'>Affirmation</span>\n");
 
-  document.getElementById("daily-horoscope").innerText = text;
+  document.getElementById("daily-horoscope").innerHTML = text;
 }
 
 loadHoroscope();
@@ -61,10 +65,7 @@ async function playHoroscopeAudio() {
   const res = await fetch("/.netlify/functions/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sign,
-      text
-    })
+    body: JSON.stringify({ sign, text })
   });
 
   if (!res.ok) {
