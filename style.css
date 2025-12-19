@@ -120,6 +120,23 @@ h2 {
 }
 
 /* ======================================
+   IN-READING SECTION HEADERS
+   (Daily / Love / Affirmation)
+====================================== */
+
+.section-header {
+    display: block;
+    margin-top: 1.6rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #d6a4ff;
+    opacity: 0.85;
+}
+
+/* ======================================
    READ / STOP BUTTONS
 ====================================== */
 
@@ -161,12 +178,18 @@ h2 {
     box-shadow: 0 0 28px rgba(255,120,120,0.9);
 }
 
-/* ============================
-   HIDE OPTIONAL SECTIONS
-   (Love + Affirmation boxes)
-============================ */
+/* ======================================
+   REMOVE UNUSED CARDS
+   (Love Compatibility + Affirmation)
+====================================== */
+
 #love-info,
 #affirmation {
-  display: none !important;
+    display: none !important;
 }
 
+/* Hide entire cards that contain them */
+.card:has(#love-info),
+.card:has(#affirmation) {
+    display: none !important;
+}
