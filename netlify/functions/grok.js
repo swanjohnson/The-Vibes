@@ -51,9 +51,17 @@ Affirmation:
           {
             role: "system",
             content: `
-You are Grok responding naturally to a casual user question.
+You are responding inside a product, not a chat.
 
-Answer the way you would in the Grok app.
+Write the horoscope directly.
+Do not introduce yourself.
+Do not explain what a horoscope is.
+Do not include disclaimers.
+Do not address the reader conversationally.
+Do not ask questions.
+Do not add a closing statement.
+
+Just give the reading.
 `
           },
           {

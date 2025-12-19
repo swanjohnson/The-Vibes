@@ -27,7 +27,7 @@ document.getElementById("date").innerText =
   });
 
 /* ============================
-   PARSE GROK RESPONSE (OPTION B)
+   PARSE GROK RESPONSE (TOLERANT)
 ============================ */
 function parseSections(text) {
   const sections = {
@@ -36,21 +36,21 @@ function parseSections(text) {
     affirmation: ""
   };
 
-  const parts = text.split(/\n(?=Daily:|Love:|Affirmation:)/i);
+  const parts = text.split(/\n(?=#+\s*(Daily:|Love:|Affirmation:))/i);
 
   parts.forEach(part => {
     const lower = part.toLowerCase();
 
-    if (lower.startsWith("daily:")) {
-      sections.daily = part.replace(/daily:/i, "").trim();
+    if (lower.includes("daily:")) {
+      sections.daily = part.replace(/#+\s*daily:/i, "").trim();
     }
 
-    if (lower.startsWith("love:")) {
-      sections.love = part.replace(/love:/i, "").trim();
+    if (lower.includes("love:")) {
+      sections.love = part.replace(/#+\s*love:/i, "").trim();
     }
 
-    if (lower.startsWith("affirmation:")) {
-      sections.affirmation = part.replace(/affirmation:/i, "").trim();
+    if (lower.includes("affirmation:")) {
+      sections.affirmation = part.replace(/#+\s*affirmation:/i, "").trim();
     }
   });
 
