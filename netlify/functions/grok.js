@@ -1,11 +1,16 @@
 // netlify/functions/grok.js
-// Grok Horoscope with Persistent Netlify Blobs Cache
+// Grok horoscope with TRUE daily persistence via Upstash Redis
 
-import { getStore } from "@netlify/blobs";
+const { Redis } = require("@upstash/redis");
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN
+});
 
 const API_KEY = process.env.XAI_API_KEY;
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
     const sign = body.sign || "aries";
@@ -14,17 +19,12 @@ export const handler = async (event) => {
     const today = new Date().toISOString().split("T")[0];
     const cacheKey = `${sign}-${today}`;
 
-    const store = getStore("daily-horoscopes", {
-  siteID: process.env.NETLIFY_SITE_ID,
-  token: process.env.NETLIFY_AUTH_TOKEN
-});
-
-    // ===== CACHE HIT =====
-    const cached = await store.get(cacheKey, { type: "json" });
+    // ===== CHECK CACHE =====
+    const cached = await redis.get(cacheKey);
     if (cached) {
       return {
         statusCode: 200,
-        body: JSON.stringify(cached)
+        body: JSON.stringify({ output: cached })
       };
     }
 
@@ -105,14 +105,12 @@ Do not mention AI, policies, or limitations.
     const data = await response.json();
     const output = data?.choices?.[0]?.message?.content || "";
 
-    const payload = { output };
-
-    // ===== SAVE PERSISTENT CACHE =====
-    await store.set(cacheKey, payload);
+    // ===== SAVE TO REDIS (PERSISTENT DAILY LOCK) =====
+    await redis.set(cacheKey, output);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ output })
     };
 
   } catch (err) {

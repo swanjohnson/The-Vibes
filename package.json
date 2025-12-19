@@ -1,8 +1,9 @@
 {
-  "name": "allvibes",
+  "name": "the-vibe",
   "version": "1.0.0",
-  "type": "module",
+  "private": true,
+  "type": "commonjs",
   "dependencies": {
-    "@netlify/blobs": "^8.0.0"
+    "@upstash/redis": "^1.34.0"
   }
 }
