@@ -47,7 +47,7 @@ async function loadHoroscope() {
   // ----------------------------
 
   text = text
-    // remove markdown junk
+    // remove markdown junk (### etc)
     .replace(/#{2,}/g, "")
 
     // normalize headers
@@ -56,19 +56,21 @@ async function loadHoroscope() {
     .replace(/\bLove:?\s*/gi, "\n<span class='section-header'>Love</span>\n")
     .replace(/\bAffirmation:?\s*/gi, "\n<span class='section-header'>Affirmation</span>\n")
 
-    // REMOVE duplicated "Love" immediately after Love header
+    // REMOVE repeated word at start of paragraph after header
+    .replace(
+      /(<span class='section-header'>Horoscope<\/span>\s*)(Horoscope[, ]+)/gi,
+      "$1"
+    )
     .replace(
       /(<span class='section-header'>Love<\/span>\s*)(Love[, ]+)/gi,
       "$1"
     )
-
-    // REMOVE duplicated "Affirmation" immediately after header
     .replace(
       /(<span class='section-header'>Affirmation<\/span>\s*)(Affirmation[, ]+)/gi,
       "$1"
     )
 
-    // clean excess whitespace
+    // collapse excessive newlines
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
