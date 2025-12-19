@@ -27,7 +27,7 @@ document.getElementById("date").innerText =
   });
 
 /* ============================
-   PARSE GROK RESPONSE SAFELY
+   PARSE GROK RESPONSE (OPTION B)
 ============================ */
 function parseSections(text) {
   const sections = {
@@ -58,7 +58,7 @@ function parseSections(text) {
 }
 
 /* ============================
-   LOAD HOROSCOPE TEXT
+   LOAD HOROSCOPE
 ============================ */
 async function loadHoroscope() {
   const res = await fetch("/.netlify/functions/grok", {
@@ -72,17 +72,24 @@ async function loadHoroscope() {
 
   const sections = parseSections(text);
 
-  // 🔒 ONLY overwrite placeholders if content exists
-  if (sections.daily) {
-    document.getElementById("daily-horoscope").innerText = sections.daily;
-  }
+  // ---- DAILY (always show something)
+  document.getElementById("daily-horoscope").innerText =
+    sections.daily || text;
 
+  // ---- LOVE (only if present)
   if (sections.love) {
     document.getElementById("love-info").innerText = sections.love;
+    document.getElementById("love-info").style.display = "block";
+  } else {
+    document.getElementById("love-info").style.display = "none";
   }
 
+  // ---- AFFIRMATION (only if present)
   if (sections.affirmation) {
     document.getElementById("affirmation").innerText = sections.affirmation;
+    document.getElementById("affirmation").style.display = "block";
+  } else {
+    document.getElementById("affirmation").style.display = "none";
   }
 }
 
@@ -95,13 +102,18 @@ let audio = null;
 
 async function playHoroscopeAudio() {
   const daily = document.getElementById("daily-horoscope").innerText;
-  const love = document.getElementById("love-info").innerText;
-  const affirmation = document.getElementById("affirmation").innerText;
+  const loveEl = document.getElementById("love-info");
+  const affEl = document.getElementById("affirmation");
 
-  const fullText =
-    `Daily Horoscope. ${daily}. ` +
-    `Love Compatibility. ${love}. ` +
-    `Daily Affirmation. ${affirmation}.`;
+  let fullText = `Daily Horoscope. ${daily}. `;
+
+  if (loveEl && loveEl.style.display !== "none") {
+    fullText += `Love. ${loveEl.innerText}. `;
+  }
+
+  if (affEl && affEl.style.display !== "none") {
+    fullText += `Affirmation. ${affEl.innerText}.`;
+  }
 
   const res = await fetch("/.netlify/functions/tts", {
     method: "POST",
