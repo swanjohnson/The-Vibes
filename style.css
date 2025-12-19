@@ -160,3 +160,13 @@ h2 {
 #stop-btn:hover {
     box-shadow: 0 0 28px rgba(255,120,120,0.9);
 }
+
+/* ============================
+   HIDE OPTIONAL SECTIONS
+   (Love + Affirmation boxes)
+============================ */
+#love-info,
+#affirmation {
+  display: none !important;
+}
+
