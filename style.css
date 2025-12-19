@@ -30,9 +30,8 @@ body {
 h1 {
   text-align: center;
   font-size: 44px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   color: #f3d2ff;
-  opacity: 0;
   animation: titleGlow 1.2s ease-out forwards;
 }
 
@@ -41,13 +40,19 @@ h1 {
   to { opacity: 1; }
 }
 
+#date {
+  text-align: center;
+  opacity: 0.8;
+  margin-bottom: 24px;
+}
+
 h2 {
   color: #f4c6ff;
   text-shadow: 0 0 8px rgba(225, 150, 255, 0.7);
 }
 
 /* ======================================
-   GALAXY BACKGROUND
+   BACKGROUND
 ====================================== */
 .stars {
   position: fixed;
@@ -108,7 +113,7 @@ h2 {
   background: rgba(40, 0, 80, 0.55);
   border: 1px solid rgba(255, 180, 255, 0.35);
   border-radius: 18px;
-  padding: 22px;
+  padding: 24px;
   margin-top: 22px;
   backdrop-filter: blur(6px);
   box-shadow:
@@ -116,23 +121,21 @@ h2 {
     0 0 40px rgba(160, 60, 255, 0.2);
 }
 
-/* ======================================
-   SECTION HEADERS
-====================================== */
+/* SECTION HEADERS (HOROSCOPE / LOVE / AFFIRMATION) */
 .section-header {
   display: block;
   margin-top: 1.6rem;
   margin-bottom: 0.4rem;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #d6a4ff;
   opacity: 0.85;
 }
 
 /* ======================================
-   SPEAK CONTROLS (FINAL)
+   AUDIO BUTTONS (FIXED)
 ====================================== */
 .speak-controls {
   margin-top: 36px;
@@ -144,7 +147,7 @@ h2 {
 #speak-btn,
 #stop-btn {
   width: 100%;
-  min-height: 68px;
+  min-height: 72px;
   padding: 18px 22px;
   font-size: 22px;
   font-weight: 600;
@@ -152,11 +155,10 @@ h2 {
   border: none;
   cursor: pointer;
   touch-action: manipulation;
-  backdrop-filter: blur(6px);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
-/* READ BUTTON */
+/* READ */
 #speak-btn {
   background: linear-gradient(135deg, #c878ff, #9650ff);
   color: white;
@@ -165,7 +167,7 @@ h2 {
     0 0 56px rgba(160, 80, 255, 0.4);
 }
 
-/* STOP BUTTON */
+/* STOP */
 #stop-btn {
   background: linear-gradient(135deg, #ff5a5a, #c83c3c);
   color: white;
@@ -174,16 +176,7 @@ h2 {
     0 0 56px rgba(200, 60, 60, 0.4);
 }
 
-/* TAP FEEDBACK */
 #speak-btn:active,
 #stop-btn:active {
   transform: scale(0.97);
-}
-
-/* ======================================
-   HIDE UNUSED SECTIONS SAFELY
-====================================== */
-#love-info,
-#affirmation {
-  display: none !important;
 }

@@ -1,44 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AllVibes Horoscope</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AllVibes Horoscope</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div class="nebula"></div>
-    <div class="stars"></div>
-    <div class="planet"></div>
+  <!-- BACKGROUND -->
+  <div class="nebula"></div>
+  <div class="stars"></div>
+  <div class="planet"></div>
 
-    <div class="container">
-        <img src="logo.png" class="logo" alt="Logo">
+  <div class="container">
+    <img src="logo.png" class="logo" alt="Logo" />
 
-        <h1 id="zodiac-title">Loading...</h1>
-        <p id="date">Loading date...</p>
+    <!-- REQUIRED IDS (FIXES DATE + SIGN) -->
+    <h1 id="zodiac-title">Loading…</h1>
+    <p id="date">Loading date…</p>
 
-        <div class="card">
-            <h2>TODAY'S VIBE</h2>
-            <p id="daily-horoscope">Fetching your cosmic guidance...</p>
-        </div>
-
-        <div class="card">
-            <h2>Love Compatibility</h2>
-            <p id="love-info">Reading your romantic frequency...</p>
-        </div>
-
-        <div class="card">
-            <h2>Daily Affirmation</h2>
-            <p id="affirmation">Centering your intention...</p>
-        </div>
-
-        <div class="speak-controls">
-            <button onclick="playHoroscopeAudio()">🔮 Read My Horoscope</button>
-            <button onclick="stopAudio()">✋ Stop Reading</button>
-        </div>
+    <!-- MAIN VIBE CARD -->
+    <div class="card">
+      <h2>TODAY'S VIBE</h2>
+      <div id="daily-horoscope">
+        Fetching your cosmic guidance…
+      </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- AUDIO CONTROLS (IDS FIXED) -->
+    <div class="speak-controls">
+      <button id="speak-btn" onclick="playHoroscopeAudio()">
+        🔮 Read My Horoscope
+      </button>
+
+      <button id="stop-btn" onclick="stopAudio()">
+        ✋ Stop Reading
+      </button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
