@@ -118,27 +118,58 @@ async function loadHoroscope() {
 loadHoroscope();
 
 /* ============================
-   AUDIO
+   ELEVENLABS AUDIO (FIXED)
 ============================ */
-let audio;
+let audio = null;
+let audioUrl = null;
 
 async function playHoroscopeAudio() {
-  const text = document.getElementById("daily-horoscope").innerText;
+  try {
+    const text = document.getElementById("daily-horoscope").innerText;
 
-  const res = await fetch("/.netlify/functions/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sign, text })
-  });
+    // Stop any existing audio first
+    stopAudio();
 
-  const buffer = await res.arrayBuffer();
-  audio = new Audio(URL.createObjectURL(new Blob([buffer])));
-  audio.play();
+    const res = await fetch("/.netlify/functions/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sign, text })
+    });
+
+    if (!res.ok) {
+      throw new Error("Audio request failed");
+    }
+
+    const buffer = await res.arrayBuffer();
+
+    // Create audio blob
+    const blob = new Blob([buffer], { type: "audio/mpeg" });
+    audioUrl = URL.createObjectURL(blob);
+
+    // Create audio element
+    audio = new Audio();
+    audio.src = audioUrl;
+    audio.preload = "auto";
+    audio.playsInline = true; // IMPORTANT for iOS
+
+    // Force play (must be user-triggered)
+    await audio.play();
+  } catch (err) {
+    console.error("Audio playback failed:", err);
+    alert("Audio playback failed. Please tap again.");
+  }
 }
 
 function stopAudio() {
   if (audio) {
     audio.pause();
     audio.currentTime = 0;
+    audio = null;
+  }
+
+  if (audioUrl) {
+    URL.revokeObjectURL(audioUrl);
+    audioUrl = null;
   }
 }
+
