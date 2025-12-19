@@ -67,6 +67,8 @@ Rules:
 - Do not ask questions
 - Do not add a closing remark
 - Do not introduce yourself
+- Do not use markdown formatting or symbols
+
 
 Structure:
 Horoscope:

@@ -42,12 +42,28 @@ async function loadHoroscope() {
   const data = await res.json();
   let text = data.output || "";
 
-  // Replace section labels + style them
+  // ----------------------------
+  // CLEANUP + NORMALIZATION
+  // ----------------------------
+
   text = text
+    // remove markdown junk like ###
+    .replace(/#{2,}/g, "")
+
+    // normalize headers
     .replace(/\bHoroscope:?\s*/gi, "<span class='section-header'>Horoscope</span>\n")
     .replace(/\bDaily:?\s*/gi, "<span class='section-header'>Horoscope</span>\n")
     .replace(/\bLove:?\s*/gi, "\n<span class='section-header'>Love</span>\n")
-    .replace(/\bAffirmation:?\s*/gi, "\n<span class='section-header'>Affirmation</span>\n");
+    .replace(/\bAffirmation:?\s*/gi, "\n<span class='section-header'>Affirmation</span>\n")
+
+    // remove duplicated headers (LOVE / AFFIRMATION repeating)
+    .replace(/(<span class='section-header'>Love<\/span>\s*){2,}/gi,
+      "<span class='section-header'>Love</span>\n")
+    .replace(/(<span class='section-header'>Affirmation<\/span>\s*){2,}/gi,
+      "<span class='section-header'>Affirmation</span>\n")
+
+    // trim excess whitespace
+    .trim();
 
   document.getElementById("daily-horoscope").innerHTML = text;
 }
