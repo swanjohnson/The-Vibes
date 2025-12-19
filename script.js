@@ -1,8 +1,17 @@
 /* ============================
-   SIGN FROM URL
+   SIGN FROM URL (BULLETPROOF)
 ============================ */
 const params = new URLSearchParams(window.location.search);
-const sign = (params.get("sign") || "aries").toLowerCase();
+
+let sign =
+  params.get("sign") ||
+  localStorage.getItem("lastSign") ||
+  "virgo"; // safe default
+
+sign = sign.toLowerCase();
+
+// persist sign so refreshes work
+localStorage.setItem("lastSign", sign);
 
 const validSigns = [
   "aries","taurus","gemini","cancer","leo","virgo",
@@ -13,6 +22,26 @@ if (!validSigns.includes(sign)) {
   document.getElementById("daily-horoscope").innerText =
     "Invalid zodiac sign.";
   throw new Error("Invalid sign");
+}
+
+/* ============================
+   SET ZODIAC + DATE (FIXED)
+============================ */
+const zodiacEl = document.getElementById("zodiac-title");
+const dateEl = document.getElementById("date");
+
+if (zodiacEl) {
+  zodiacEl.innerText =
+    sign.charAt(0).toUpperCase() + sign.slice(1);
+}
+
+if (dateEl) {
+  dateEl.innerText =
+    new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric"
+    });
 }
 
 /* ============================
@@ -28,18 +57,18 @@ async function loadHoroscope() {
   const data = await res.json();
   let text = data.output || "";
 
-  // ----------------------------
-  // NORMALIZE
-  // ----------------------------
+  /* ----------------------------
+     NORMALIZE RAW OUTPUT
+  ---------------------------- */
   text = text
     .replace(/#{2,}/g, "")
     .replace(/\r/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  // ----------------------------
-  // FORCE STRUCTURE
-  // ----------------------------
+  /* ----------------------------
+     FORCE STRUCTURE
+  ---------------------------- */
   const sections = {
     Horoscope: "",
     Love: "",
@@ -69,9 +98,9 @@ async function loadHoroscope() {
     }
   });
 
-  // ----------------------------
-  // RENDER
-  // ----------------------------
+  /* ----------------------------
+     RENDER CLEAN OUTPUT
+  ---------------------------- */
   const output = `
     <span class="section-header">HOROSCOPE</span>
     <p>${sections.Horoscope.trim()}</p>
