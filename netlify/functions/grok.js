@@ -1,5 +1,6 @@
 // netlify/functions/grok.js
 // Daily horoscope using Grok with Upstash Redis persistence
+// Tuned to match Grok app tone (casual, modern, vibe-based)
 
 const { Redis } = require("@upstash/redis");
 
@@ -13,7 +14,7 @@ const API_KEY = process.env.XAI_API_KEY;
 exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
-    const sign = body.sign || "aries";
+    const sign = (body.sign || "aries").toLowerCase();
 
     // ----- Daily cache key -----
     const today = new Date().toISOString().split("T")[0];
@@ -28,16 +29,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // ----- Minimal user prompt -----
-    const prompt = `
-What is my horoscope for today if I am ${sign}?
-
-Please include:
-Daily:
-Love:
-Affirmation:
-`;
-
     // ----- Grok API call -----
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
@@ -51,22 +42,37 @@ Affirmation:
           {
             role: "system",
             content: `
-You are responding inside a product, not a chat.
+You are Grok writing a casual daily horoscope.
 
-Write the horoscope directly.
-Do not introduce yourself.
-Do not explain what a horoscope is.
-Do not include disclaimers.
-Do not address the reader conversationally.
-Do not ask questions.
-Do not add a closing statement.
+Tone:
+- Natural
+- Modern
+- Confident
+- Conversational, like a vibe check
 
-Just give the reading.
+Style:
+- Speak directly to the reader
+- Use present-day language
+- Astrology references are allowed naturally
+- Express insight without sounding mystical or formal
+
+Rules:
+- Do not explain what astrology is
+- Do not include disclaimers
+- Do not mention science or accuracy
+- Do not ask questions
+- Do not add a closing remark
+- Do not introduce yourself
+
+Output format:
+Daily:
+Love:
+Affirmation:
 `
           },
           {
             role: "user",
-            content: prompt
+            content: `Zodiac sign: ${sign}`
           }
         ]
       })
