@@ -47,7 +47,7 @@ async function loadHoroscope() {
   // ----------------------------
 
   text = text
-    // remove markdown junk like ###
+    // remove markdown junk
     .replace(/#{2,}/g, "")
 
     // normalize headers
@@ -56,13 +56,20 @@ async function loadHoroscope() {
     .replace(/\bLove:?\s*/gi, "\n<span class='section-header'>Love</span>\n")
     .replace(/\bAffirmation:?\s*/gi, "\n<span class='section-header'>Affirmation</span>\n")
 
-    // remove duplicated headers (LOVE / AFFIRMATION repeating)
-    .replace(/(<span class='section-header'>Love<\/span>\s*){2,}/gi,
-      "<span class='section-header'>Love</span>\n")
-    .replace(/(<span class='section-header'>Affirmation<\/span>\s*){2,}/gi,
-      "<span class='section-header'>Affirmation</span>\n")
+    // REMOVE duplicated "Love" immediately after Love header
+    .replace(
+      /(<span class='section-header'>Love<\/span>\s*)(Love[, ]+)/gi,
+      "$1"
+    )
 
-    // trim excess whitespace
+    // REMOVE duplicated "Affirmation" immediately after header
+    .replace(
+      /(<span class='section-header'>Affirmation<\/span>\s*)(Affirmation[, ]+)/gi,
+      "$1"
+    )
+
+    // clean excess whitespace
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 
   document.getElementById("daily-horoscope").innerHTML = text;
@@ -84,9 +91,7 @@ async function playHoroscopeAudio() {
     body: JSON.stringify({ sign, text })
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to load audio");
-  }
+  if (!res.ok) throw new Error("Failed to load audio");
 
   const arrayBuffer = await res.arrayBuffer();
   const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
