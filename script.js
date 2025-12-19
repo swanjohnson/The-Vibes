@@ -27,38 +27,7 @@ document.getElementById("date").innerText =
   });
 
 /* ============================
-   PARSE GROK RESPONSE
-============================ */
-function parseSections(text) {
-  const sections = {
-    daily: "",
-    love: "",
-    affirmation: ""
-  };
-
-  const parts = text.split(/\n(?=#+\s*(Daily:|Love:|Affirmation:))/i);
-
-  parts.forEach(part => {
-    const cleaned = part.trim();
-
-    if (/daily:/i.test(cleaned)) {
-      sections.daily = cleaned.replace(/#+\s*daily:/i, "").trim();
-    }
-
-    if (/love:/i.test(cleaned)) {
-      sections.love = cleaned.replace(/#+\s*love:/i, "").trim();
-    }
-
-    if (/affirmation:/i.test(cleaned)) {
-      sections.affirmation = cleaned.replace(/#+\s*affirmation:/i, "").trim();
-    }
-  });
-
-  return sections;
-}
-
-/* ============================
-   LOAD HOROSCOPE
+   LOAD HOROSCOPE (SINGLE READING)
 ============================ */
 async function loadHoroscope() {
   const res = await fetch("/.netlify/functions/grok", {
@@ -68,29 +37,15 @@ async function loadHoroscope() {
   });
 
   const data = await res.json();
-  const text = data.output || "";
+  let text = data.output || "";
 
-  const sections = parseSections(text);
+  // ---- Clean section labels (remove colons, keep words)
+  text = text
+    .replace(/\bDaily:\s*/gi, "Daily\n")
+    .replace(/\bLove:\s*/gi, "\nLove\n")
+    .replace(/\bAffirmation:\s*/gi, "\nAffirmation\n");
 
-  // ---- DAILY (fallback allowed ONLY here)
-  document.getElementById("daily-horoscope").innerText =
-    sections.daily || text;
-
-  // ---- LOVE (no fallback)
-  if (sections.love) {
-    document.getElementById("love-info").innerText = sections.love;
-    document.getElementById("love-info").style.display = "block";
-  } else {
-    document.getElementById("love-info").style.display = "none";
-  }
-
-  // ---- AFFIRMATION (no fallback)
-  if (sections.affirmation) {
-    document.getElementById("affirmation").innerText = sections.affirmation;
-    document.getElementById("affirmation").style.display = "block";
-  } else {
-    document.getElementById("affirmation").style.display = "none";
-  }
+  document.getElementById("daily-horoscope").innerText = text;
 }
 
 loadHoroscope();
@@ -101,27 +56,20 @@ loadHoroscope();
 let audio = null;
 
 async function playHoroscopeAudio() {
-  const daily = document.getElementById("daily-horoscope").innerText;
-  const loveEl = document.getElementById("love-info");
-  const affEl = document.getElementById("affirmation");
-
-  let fullText = `Daily. ${daily}. `;
-
-  if (loveEl && loveEl.style.display !== "none") {
-    fullText += `Love. ${loveEl.innerText}. `;
-  }
-
-  if (affEl && affEl.style.display !== "none") {
-    fullText += `Affirmation. ${affEl.innerText}.`;
-  }
+  const text = document.getElementById("daily-horoscope").innerText;
 
   const res = await fetch("/.netlify/functions/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sign, text: fullText })
+    body: JSON.stringify({
+      sign,
+      text
+    })
   });
 
-  if (!res.ok) throw new Error("Failed to load audio");
+  if (!res.ok) {
+    throw new Error("Failed to load audio");
+  }
 
   const arrayBuffer = await res.arrayBuffer();
   const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
