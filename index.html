@@ -2,11 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
   <title>The Vibe</title>
 
-  <!-- Elegant reading font -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -15,38 +21,43 @@
   <!-- 🌌 Galaxy Video Background -->
   <div class="video-bg">
     <video autoplay muted loop playsinline>
-      <source src="/videos/galaxy.mp4" type="video/mp4">
+      <source src="/videos/galaxy.mp4" type="video/mp4" />
     </video>
   </div>
 
+  <!-- App UI -->
   <main class="app">
+    <div class="vibe-card">
 
-    <!-- Logo -->
-    <div class="logo">
-      <img src="/logo.png" alt="The Vibe Logo" />
+      <!-- Logo -->
+      <div class="logo">
+        <img src="/logo.png" alt="The Vibe Logo" />
+      </div>
+
+      <!-- Sign + Date -->
+      <h1 class="sign glow-text" id="signName">Virgo</h1>
+      <p class="date" id="currentDate">Saturday, December 20</p>
+
+      <!-- Reading -->
+      <section class="reading-card">
+        <h2 class="vibe-title glow-soft">TODAY’S VIBE</h2>
+        <p class="daily-reading" id="dailyReading">
+          Loading your daily vibe...
+        </p>
+      </section>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="primary-btn" onclick="playHoroscopeAudio()">
+          🔮 Read My Horoscope
+        </button>
+
+        <button class="stop-btn" onclick="stopAudio()">
+          ✋ Stop Reading
+        </button>
+      </div>
+
     </div>
-
-    <!-- Sign + Date -->
-    <h1 class="sign" id="signName">Virgo</h1>
-    <p class="date" id="currentDate">Saturday, December 20</p>
-
-    <!-- Reading Card -->
-    <section class="reading-card">
-      <h2 class="vibe-title">TODAY'S VIBE</h2>
-      <p id="dailyReading">
-        Loading your daily vibe...
-      </p>
-    </section>
-
-    <!-- Buttons -->
-    <button class="primary-btn" onclick="playHoroscopeAudio()">
-      🔮 Read My Horoscope
-    </button>
-
-    <button class="stop-btn" onclick="stopAudio()">
-      ✋ Stop Reading
-    </button>
-
   </main>
 
   <script src="script.js"></script>

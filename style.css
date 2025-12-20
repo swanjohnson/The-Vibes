@@ -1,5 +1,5 @@
 /* ===============================
-   GLOBAL RESET
+   RESET + ROOT LOCK
 ================================ */
 * {
   box-sizing: border-box;
@@ -7,10 +7,11 @@
   padding: 0;
 }
 
-html, body {
-  height: 100%;
+html,
+body {
   width: 100%;
-  overflow: hidden; /* Prevent scrolling */
+  height: 100%;
+  overflow: hidden;
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: #000;
   color: #fff;
@@ -27,25 +28,24 @@ html, body {
 }
 
 .video-bg video {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   object-fit: cover;
 }
 
-/* Soft dark overlay for readability */
+/* Dark overlay */
 .video-bg::after {
   content: "";
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 1;
 }
 
 /* ===============================
-   MAIN LAYOUT (FIXES BLACK BAR)
+   APP LAYOUT (NO BLACK BAR)
 ================================ */
 .app {
-  min-height: 100svh; /* mobile-safe viewport height */
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,60 +53,69 @@ html, body {
 }
 
 /* ===============================
-   CONTENT CARD
+   CARD
 ================================ */
 .vibe-card {
   width: 100%;
   max-width: 420px;
   background: rgba(20, 8, 35, 0.65);
-  border-radius: 20px;
-  padding: 24px 20px 28px;
+  border-radius: 22px;
+  padding: 26px 22px 30px;
   text-align: center;
 
   box-shadow:
-    0 0 25px rgba(150, 90, 255, 0.25),
-    inset 0 0 0 1px rgba(180, 120, 255, 0.25);
+    0 0 28px rgba(160, 110, 255, 0.35),
+    inset 0 0 0 1px rgba(190, 140, 255, 0.25);
 }
 
 /* ===============================
-   LOGO
+   LOGO (UNCLIPPABLE)
 ================================ */
 .logo {
+  margin-bottom: 14px;
+}
+
+.logo img {
   width: 72px;
-  margin: 0 auto 14px;
-  display: block;
+  height: auto;
+  filter: drop-shadow(0 0 18px rgba(185, 120, 255, 0.8));
 }
 
 /* ===============================
-   TITLES & TEXT
+   TEXT + GLOW
 ================================ */
-.todays-vibe-title {
-  font-size: 0.85rem;
-  letter-spacing: 0.18em;
-  color: #e9d7ff;
-  margin-bottom: 6px;
-
-  text-shadow:
-    0 0 8px rgba(200, 150, 255, 0.4),
-    0 0 16px rgba(160, 100, 255, 0.25);
-}
-
-.sign-name {
+.sign {
   font-size: 2.6rem;
   font-weight: 600;
   margin-bottom: 4px;
   color: #d9b8ff;
-
-  text-shadow:
-    0 0 10px rgba(185, 120, 255, 0.6),
-    0 0 20px rgba(185, 120, 255, 0.45),
-    0 0 35px rgba(140, 80, 255, 0.35);
 }
 
-.current-date {
+.date {
   font-size: 0.8rem;
   opacity: 0.75;
   margin-bottom: 18px;
+}
+
+.vibe-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  margin-bottom: 10px;
+  color: #f0e6ff;
+}
+
+/* Glow utilities (LOCKED) */
+.glow-text {
+  text-shadow:
+    0 0 10px rgba(185, 120, 255, 0.6),
+    0 0 22px rgba(185, 120, 255, 0.45),
+    0 0 38px rgba(140, 80, 255, 0.35);
+}
+
+.glow-soft {
+  text-shadow:
+    0 0 8px rgba(200, 150, 255, 0.45),
+    0 0 18px rgba(160, 100, 255, 0.35);
 }
 
 /* ===============================
@@ -115,13 +124,12 @@ html, body {
 .daily-reading {
   font-size: 1rem;
   line-height: 1.55;
-  color: #f2eaff;
-  margin-bottom: 22px;
-  text-align: center;
+  color: #f3eaff;
+  margin-bottom: 24px;
 }
 
 /* ===============================
-   BUTTONS
+   ACTIONS
 ================================ */
 .actions {
   display: flex;
@@ -140,38 +148,35 @@ html, body {
   cursor: pointer;
 
   box-shadow:
-    0 0 18px rgba(160, 110, 255, 0.65);
+    0 0 20px rgba(160, 110, 255, 0.7);
 }
 
 .primary-btn:active {
   transform: scale(0.97);
 }
 
+/* Calm stop button */
 .stop-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(180, 120, 255, 0.35);
-  color: #e6d9ff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(190, 140, 255, 0.35);
+  color: #efe6ff;
   font-size: 0.9rem;
   border-radius: 999px;
   padding: 12px 18px;
   cursor: pointer;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
 }
 
 .stop-btn:hover {
-  background: rgba(180, 120, 255, 0.15);
+  background: rgba(190, 140, 255, 0.18);
 }
 
 /* ===============================
-   MOBILE SAFETY
+   SMALL SCREEN SAFETY
 ================================ */
 @media (max-height: 650px) {
-  .vibe-card {
-    padding: 18px 16px 22px;
-  }
-
-  .sign-name {
-    font-size: 2.2rem;
+  .sign {
+    font-size: 2.3rem;
   }
 
   .daily-reading {
