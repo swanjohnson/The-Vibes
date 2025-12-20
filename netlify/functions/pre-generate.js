@@ -1,17 +1,13 @@
 // netlify/functions/pre-generate.js
-// Daily background pre-generation for all zodiac signs
-
-const fetch = require("node-fetch");
+// Daily background pre-generation using built-in fetch (Node 20)
 
 const SIGNS = [
   "aries","taurus","gemini","cancer","leo","virgo",
   "libra","scorpio","sagittarius","capricorn","aquarius","pisces"
 ];
 
-// Use UTC midnight trigger; user timezone safety is already handled
 function getTodayUTC() {
-  const now = new Date();
-  return now.toISOString().split("T")[0];
+  return new Date().toISOString().split("T")[0];
 }
 
 exports.handler = async () => {
