@@ -1,27 +1,24 @@
 export const handler = async () => {
   const ZODIAC_BATCHES = [
-    ["aries", "taurus", "gemini", "cancer"],
-    ["leo", "virgo", "libra", "scorpio"],
-    ["sagittarius", "capricorn", "aquarius", "pisces"]
+    ["aries", "taurus", "gemini"],
+    ["cancer", "leo", "virgo"],
+    ["libra", "scorpio", "sagittarius"],
+    ["capricorn", "aquarius", "pisces"]
   ];
 
-  // Always use UTC date for rollover safety
   const today = new Date().toISOString().split("T")[0];
-
   console.log(`🔮 Pre-generating daily horoscopes for ${today}`);
 
   const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
-
   if (!baseUrl) {
     console.error("❌ Missing site URL");
     return { statusCode: 500 };
   }
 
   for (let i = 0; i < ZODIAC_BATCHES.length; i++) {
-    const batch = ZODIAC_BATCHES[i];
     console.log(`🔁 Starting batch ${i + 1}/${ZODIAC_BATCHES.length}`);
 
-    for (const sign of batch) {
+    for (const sign of ZODIAC_BATCHES[i]) {
       try {
         const res = await fetch(`${baseUrl}/.netlify/functions/grok`, {
           method: "POST",
