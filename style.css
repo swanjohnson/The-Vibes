@@ -1,160 +1,150 @@
-/* ======================================
-   GLOBAL
-====================================== */
+/* ===== RESET ===== */
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
-  font-family: "Poppins", sans-serif;
-  background: black;
-  color: #fff;
+  min-height: 100vh;
   overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
+  color: #fff;
 }
 
-/* ======================================
-   GALAXY VIDEO BACKGROUND
-====================================== */
-#bg-video {
+/* ===== VIDEO BACKGROUND ===== */
+.video-bg {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+}
+
+.video-bg video {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  z-index: -10;
-  opacity: 0.55;
-  pointer-events: none;
 }
 
-/* ======================================
-   CONTAINER (ABOVE VIDEO)
-====================================== */
-.container {
-  position: relative;
-  z-index: 5;
-  max-width: 700px;
-  margin: 20px auto 40px;
-  padding: 16px;
+/* Dark overlay for readability */
+.video-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* ===== MAIN LAYOUT ===== */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 1rem;
   text-align: center;
 }
 
-@media (max-width: 600px) {
-  .container {
-    margin-top: 10px;
-  }
+/* ===== LOGO ===== */
+.logo img {
+  width: 90px;
+  margin-bottom: 0.5rem;
 }
 
-/* ======================================
-   LOGO
-====================================== */
-.logo {
-  width: 140px;
-  display: block;
-  margin: 0 auto 8px;
-}
-
-/* ======================================
-   SIGN (MATCHES BUTTON GLOW)
-====================================== */
-#zodiac-title {
-  font-size: 42px;
-  font-weight: 700;
-  margin: 6px 0 4px;
-  color: #f3c6ff;
-  text-align: center;
+/* ===== SIGN ===== */
+.sign {
+  font-size: 2.8rem;
+  font-weight: 600;
+  margin: 0.2rem 0;
+  color: #c77dff;
   text-shadow:
-    0 0 12px rgba(200, 120, 255, 0.9),
-    0 0 28px rgba(160, 80, 255, 0.6);
+    0 0 10px rgba(199,125,255,0.6),
+    0 0 30px rgba(199,125,255,0.4);
 }
 
-/* DATE */
-#date {
-  font-size: 16px;
+/* ===== DATE ===== */
+.date {
+  font-size: 0.95rem;
   opacity: 0.85;
-  margin-bottom: 16px;
+  margin-bottom: 1.5rem;
 }
 
-/* ======================================
-   CARD
-====================================== */
-.card {
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 180, 255, 0.35);
-  border-radius: 18px;
-  padding: 22px;
-  margin-top: 12px;
-  backdrop-filter: blur(6px);
-  box-shadow:
-    0 0 20px rgba(200, 100, 255, 0.35),
-    0 0 40px rgba(160, 60, 255, 0.25);
+/* ===== READING CARD ===== */
+.reading-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(35, 0, 60, 0.55);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.8rem;
+  box-shadow: 0 0 40px rgba(160, 100, 255, 0.25);
+  animation: fadeUp 0.8s ease-out;
 }
 
-/* TODAY'S VIBE */
-.card h2 {
-  font-size: 26px;
-  margin-bottom: 14px;
-  color: #f3d2ff;
-  text-shadow: 0 0 12px rgba(200, 120, 255, 0.6);
+.vibe-title {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 2px;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #e5c7ff;
 }
 
-/* READING TEXT */
-#daily-horoscope {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 19px;
+/* Elegant reading font */
+.reading-card p {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
   line-height: 1.6;
-  color: #f6ecff;
-  text-align: center;
-  max-width: 92%;
+  max-width: 38ch;
   margin: 0 auto;
 }
 
-/* ======================================
-   AUDIO BUTTONS
-====================================== */
-.speak-controls {
-  margin-top: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+/* ===== BUTTONS ===== */
+button {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.1rem;
+  border-radius: 999px;
+  border: none;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
 
-/* READ BUTTON */
-#speak-btn {
-  width: 100%;
-  min-height: 72px;
-  font-size: 22px;
+/* Primary */
+.primary-btn {
+  background: linear-gradient(135deg, #b983ff, #8b5cf6);
+  color: #fff;
   font-weight: 600;
-  border-radius: 22px;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, #c878ff, #9650ff);
-  color: white;
-  box-shadow:
-    0 0 30px rgba(200, 120, 255, 0.85),
-    0 0 60px rgba(160, 80, 255, 0.5);
-  transition: transform 0.15s ease;
+  box-shadow: 0 8px 30px rgba(160, 100, 255, 0.5);
 }
 
-#speak-btn:active {
-  transform: scale(0.97);
+.primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 35px rgba(160, 100, 255, 0.7);
 }
 
-/* STOP BUTTON */
-#stop-btn {
-  width: 100%;
-  min-height: 64px;
-  font-size: 20px;
-  font-weight: 500;
-  border-radius: 20px;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, #2e1f3d, #1c1326);
-  color: #e8d9ff;
-  box-shadow: 0 0 16px rgba(180, 120, 255, 0.35);
+/* Stop Reading (calm + premium) */
+.stop-btn {
+  margin-top: 0.9rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ddd;
+  backdrop-filter: blur(10px);
 }
 
-#stop-btn:active {
-  transform: scale(0.97);
+.stop-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== ANIMATION ===== */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -1,146 +1,91 @@
-/* ============================
-   SIGN (URL → STORAGE → DEFAULT)
-============================ */
-const params = new URLSearchParams(window.location.search);
+let audioPlayer = null;
 
-let sign =
-  params.get("sign") ||
-  localStorage.getItem("lastSign") ||
-  "virgo";
+document.addEventListener("DOMContentLoaded", () => {
+  loadDailyHoroscope();
+});
 
-sign = sign.toLowerCase();
-localStorage.setItem("lastSign", sign);
-
-const validSigns = [
-  "aries","taurus","gemini","cancer","leo","virgo",
-  "libra","scorpio","sagittarius","capricorn","aquarius","pisces"
-];
-
-if (!validSigns.includes(sign)) {
-  document.getElementById("daily-horoscope").innerText =
-    "Invalid zodiac sign.";
-  throw new Error("Invalid sign");
-}
-
-/* ============================
-   USER-LOCAL DATE (TIMEZONE SAFE)
-============================ */
-function getLocalDateKey() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-const localDateKey = getLocalDateKey();
-
-/* ============================
-   SET HEADER (SIGN + DATE)
-============================ */
-const zodiacEl = document.getElementById("zodiac-title");
-const dateEl = document.getElementById("date");
-
-if (zodiacEl) {
-  zodiacEl.innerText =
-    sign.charAt(0).toUpperCase() + sign.slice(1);
-}
-
-if (dateEl) {
-  dateEl.innerText =
-    new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric"
-    });
-}
-
-/* ============================
-   LOAD DAILY READING (AUTO)
-============================ */
+/* ===============================
+   LOAD DAILY HOROSCOPE (AUTO)
+================================ */
 async function loadDailyHoroscope() {
   try {
-    const res = await fetch("/.netlify/functions/grok", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sign,
-        date: localDateKey
-      })
-    });
+    const signEl = document.getElementById("signName");
+    const dateEl = document.getElementById("currentDate");
+    const readingEl = document.getElementById("dailyReading");
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch daily reading");
+    if (!signEl || !dateEl || !readingEl) {
+      console.error("Missing required DOM elements");
+      return;
     }
 
+    const params = new URLSearchParams(window.location.search);
+    const sign = params.get("sign") || "virgo";
+
+    signEl.innerText = capitalize(sign);
+    dateEl.innerText = getLocalDateString();
+
+    const res = await fetch(`/.netlify/functions/grok?sign=${sign}`);
     const data = await res.json();
 
-    if (!data.text) {
+    if (!data || !data.reading) {
       throw new Error("Missing daily reading text");
     }
 
-    document.getElementById("daily-horoscope").innerText = data.text;
+    readingEl.innerText = data.reading;
 
   } catch (err) {
     console.error("Daily load error:", err);
-    document.getElementById("daily-horoscope").innerText =
-      "Today’s vibe is still forming. Please refresh.";
   }
 }
 
-loadDailyHoroscope();
-
-/* ============================
-   ELEVENLABS AUDIO (PLAY ONLY)
-============================ */
-let audio = null;
-let audioUrl = null;
-
+/* ===============================
+   AUDIO (ELEVEN LABS)
+================================ */
 async function playHoroscopeAudio() {
   try {
     stopAudio();
 
-    const text =
-      document.getElementById("daily-horoscope").innerText;
+    const text = document.getElementById("dailyReading")?.innerText;
+    if (!text) return;
 
     const res = await fetch("/.netlify/functions/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sign,
-        date: localDateKey,
-        text
-      })
+      body: JSON.stringify({ text })
     });
 
     if (!res.ok) {
       throw new Error("Audio generation failed");
     }
 
-    const buffer = await res.arrayBuffer();
-    const blob = new Blob([buffer], { type: "audio/mpeg" });
-
-    audioUrl = URL.createObjectURL(blob);
-    audio = new Audio(audioUrl);
-    audio.playsInline = true;
-
-    await audio.play();
+    const audioBlob = await res.blob();
+    audioPlayer = new Audio(URL.createObjectURL(audioBlob));
+    audioPlayer.play();
 
   } catch (err) {
     console.error("Audio error:", err);
-    alert("Tap again to play audio.");
   }
 }
 
 function stopAudio() {
-  if (audio) {
-    audio.pause();
-    audio.currentTime = 0;
-    audio = null;
+  if (audioPlayer) {
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+    audioPlayer = null;
   }
+}
 
-  if (audioUrl) {
-    URL.revokeObjectURL(audioUrl);
-    audioUrl = null;
-  }
+/* ===============================
+   HELPERS
+================================ */
+function getLocalDateString() {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric"
+  });
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
