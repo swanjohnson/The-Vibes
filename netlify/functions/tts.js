@@ -1,12 +1,11 @@
 import { Redis } from "@upstash/redis";
-import fetch from "node-fetch";
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-export async function handler(event) {
+export const handler = async (event) => {
   try {
     const { sign, date, text } = JSON.parse(event.body || "{}");
 
@@ -19,7 +18,9 @@ export async function handler(event) {
 
     const audioKey = `audio:${sign}:${date}`;
 
-    // ✅ Check audio cache
+    /* ============================
+       CHECK AUDIO CACHE
+    ============================ */
     const cachedAudio = await redis.get(audioKey);
     if (cachedAudio) {
       return {
@@ -33,9 +34,11 @@ export async function handler(event) {
       };
     }
 
-    // 🔊 Generate audio (ElevenLabs)
+    /* ============================
+       GENERATE AUDIO (ElevenLabs)
+    ============================ */
     const elevenRes = await fetch(
-      "https://api.elevenlabs.io/v1/text-to-speech/a0Xwc8p0UGT1y2FQIO9p",
+      `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVEN_VOICE_ID}`,
       {
         method: "POST",
         headers: {
@@ -54,13 +57,16 @@ export async function handler(event) {
     );
 
     if (!elevenRes.ok) {
-      throw new Error("ElevenLabs audio generation failed");
+      const errText = await elevenRes.text();
+      throw new Error(`ElevenLabs error: ${errText}`);
     }
 
     const buffer = Buffer.from(await elevenRes.arrayBuffer());
     const base64Audio = buffer.toString("base64");
 
-    // ✅ Store audio for the entire day
+    /* ============================
+       SAVE AUDIO FOR THE DAY
+    ============================ */
     await redis.set(audioKey, base64Audio, {
       ex: 60 * 60 * 24, // 24 hours
     });
@@ -81,4 +87,4 @@ export async function handler(event) {
       body: "Audio generation failed",
     };
   }
-}
+};
