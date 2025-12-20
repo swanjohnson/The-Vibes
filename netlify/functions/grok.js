@@ -1,6 +1,3 @@
-// netlify/functions/grok.js
-// Timezone-safe daily Grok horoscope with Upstash caching (GET-based)
-
 const { Redis } = require("@upstash/redis");
 
 const redis = new Redis({
@@ -12,21 +9,12 @@ const API_KEY = process.env.XAI_API_KEY;
 
 exports.handler = async (event) => {
   try {
-    /* ============================
-       INPUT
-    ============================ */
     const sign =
       (event.queryStringParameters?.sign || "virgo").toLowerCase();
 
-    // Timezone-safe LOCAL date (server-independent)
-    const now = new Date();
-    const date = now.toISOString().split("T")[0];
-
+    const date = new Date().toISOString().split("T")[0];
     const cacheKey = `horoscope:${sign}:${date}`;
 
-    /* ============================
-       CACHE CHECK
-    ============================ */
     const cached = await redis.get(cacheKey);
     if (cached?.reading) {
       return {
@@ -35,9 +23,6 @@ exports.handler = async (event) => {
       };
     }
 
-    /* ============================
-       GROK GENERATION
-    ============================ */
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -52,29 +37,28 @@ exports.handler = async (event) => {
             content: `
 You are Grok.
 
-Write a single, modern daily horoscope for the zodiac sign provided.
+Write a single, modern daily horoscope.
 
-Tone & style:
-- Conversational, grounded, confident
+Tone:
+- Natural
+- Calm confidence
 - Sounds like the Grok app
-- Short, direct, natural
 
 Rules:
 - ONE paragraph only
 - 250–350 characters
+- Address the reader in the singular ("Virgo", "you")
+- Never use plural sign names ("Virgos")
 - Include:
-  • today's general energy
-  • a quick love or relationship note
+  • general daily energy
+  • a brief love or relationship note
   • one practical insight
 - No headers, no emojis, no affirmations, no disclaimers
-- Avoid mystical or dramatic astrology language
-
-This should feel like a quick daily vibe check someone would enjoy hearing out loud.
 `
           },
           {
             role: "user",
-            content: `Give me today's horoscope for ${sign}.`
+            content: `Give today's horoscope for the zodiac sign ${sign}.`
           }
         ]
       })
@@ -83,19 +67,9 @@ This should feel like a quick daily vibe check someone would enjoy hearing out l
     const data = await response.json();
     const text = data?.choices?.[0]?.message?.content?.trim();
 
-    if (!text) {
-      throw new Error("Empty Grok response");
-    }
+    if (!text) throw new Error("Empty Grok response");
 
-    const result = {
-      sign,
-      date,
-      reading: text
-    };
-
-    /* ============================
-       SAVE TO CACHE
-    ============================ */
+    const result = { sign, date, reading: text };
     await redis.set(cacheKey, result);
 
     return {

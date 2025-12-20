@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ===============================
-   LOAD DAILY HOROSCOPE (AUTO)
+   LOAD DAILY HOROSCOPE (SAFE)
 ================================ */
 async function loadDailyHoroscope() {
   try {
@@ -27,19 +27,25 @@ async function loadDailyHoroscope() {
     const res = await fetch(`/.netlify/functions/grok?sign=${sign}`);
     const data = await res.json();
 
-    if (!data || !data.reading) {
-      throw new Error("Missing daily reading text");
+    if (data?.reading) {
+      readingEl.innerText = data.reading;
+    } else {
+      readingEl.innerText =
+        "Today's vibe is still forming. Check back in a moment ✨";
     }
-
-    readingEl.innerText = data.reading;
 
   } catch (err) {
     console.error("Daily load error:", err);
+    const readingEl = document.getElementById("dailyReading");
+    if (readingEl) {
+      readingEl.innerText =
+        "Today's vibe is still forming. Please refresh shortly ✨";
+    }
   }
 }
 
 /* ===============================
-   AUDIO (ELEVEN LABS)
+   AUDIO
 ================================ */
 async function playHoroscopeAudio() {
   try {
@@ -54,12 +60,10 @@ async function playHoroscopeAudio() {
       body: JSON.stringify({ text })
     });
 
-    if (!res.ok) {
-      throw new Error("Audio generation failed");
-    }
+    if (!res.ok) throw new Error("Audio generation failed");
 
-    const audioBlob = await res.blob();
-    audioPlayer = new Audio(URL.createObjectURL(audioBlob));
+    const blob = await res.blob();
+    audioPlayer = new Audio(URL.createObjectURL(blob));
     audioPlayer.play();
 
   } catch (err) {
