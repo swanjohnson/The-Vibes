@@ -1,5 +1,5 @@
 // netlify/functions/grok.js
-// Timezone-safe daily Grok horoscope with Upstash caching
+// Timezone-safe daily Grok horoscope with Upstash caching (GET-based)
 
 const { Redis } = require("@upstash/redis");
 
@@ -12,14 +12,15 @@ const API_KEY = process.env.XAI_API_KEY;
 
 exports.handler = async (event) => {
   try {
-    const body = JSON.parse(event.body || "{}");
+    /* ============================
+       INPUT
+    ============================ */
+    const sign =
+      (event.queryStringParameters?.sign || "virgo").toLowerCase();
 
-    const sign = (body.sign || "virgo").toLowerCase();
-    const date = body.date; // USER-LOCAL DATE (timezone-safe)
-
-    if (!date) {
-      throw new Error("Missing date for timezone-safe rollover");
-    }
+    // Timezone-safe LOCAL date (server-independent)
+    const now = new Date();
+    const date = now.toISOString().split("T")[0];
 
     const cacheKey = `horoscope:${sign}:${date}`;
 
@@ -27,7 +28,7 @@ exports.handler = async (event) => {
        CACHE CHECK
     ============================ */
     const cached = await redis.get(cacheKey);
-    if (cached) {
+    if (cached?.reading) {
       return {
         statusCode: 200,
         body: JSON.stringify(cached)
@@ -54,20 +55,19 @@ You are Grok.
 Write a single, modern daily horoscope for the zodiac sign provided.
 
 Tone & style:
-- Conversational, grounded, and confident
-- Casual but thoughtful
-- Sounds like the Grok app, not traditional astrology
-- Natural and human, not poetic or mystical
+- Conversational, grounded, confident
+- Sounds like the Grok app
+- Short, direct, natural
 
-Content rules:
+Rules:
 - ONE paragraph only
-- Keep the response between 250 and 350 characters total
-- Naturally include:
-  • today's general energy or focus
-  • a brief note on love or relationships
-  • one practical or real-world insight
-- Do NOT use section headers, bullet points, affirmations, emojis, or disclaimers
-- Avoid astrology mechanics, spiritual language, or dramatic phrasing
+- 250–350 characters
+- Include:
+  • today's general energy
+  • a quick love or relationship note
+  • one practical insight
+- No headers, no emojis, no affirmations, no disclaimers
+- Avoid mystical or dramatic astrology language
 
 This should feel like a quick daily vibe check someone would enjoy hearing out loud.
 `
@@ -90,7 +90,7 @@ This should feel like a quick daily vibe check someone would enjoy hearing out l
     const result = {
       sign,
       date,
-      text
+      reading: text
     };
 
     /* ============================
@@ -102,6 +102,7 @@ This should feel like a quick daily vibe check someone would enjoy hearing out l
       statusCode: 200,
       body: JSON.stringify(result)
     };
+
   } catch (err) {
     console.error("Grok error:", err);
     return {
