@@ -114,11 +114,12 @@ async function playHoroscopeAudio() {
     const res = await fetch("/.netlify/functions/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-  sign,
-  date: localDateKey,
-  text
-})
+      body: JSON.stringify({
+        sign,
+        date: localDateKey,
+        text
+      })
+    });
 
     if (!res.ok) {
       throw new Error("Audio generation failed");
