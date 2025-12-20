@@ -130,25 +130,56 @@ body {
 /* ===============================
    BUTTONS (UNCHANGED)
 ================================ */
+
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
+/* Primary: Read My Horoscope */
 .primary-btn {
   background: linear-gradient(135deg, #9f6bff, #c59bff);
+  color: #1b062f;
+  font-size: 1rem;
+  font-weight: 600;
   border: none;
   border-radius: 999px;
-  padding: 14px 18px;
-  font-weight: 600;
+  padding: 15px 20px;
   cursor: pointer;
+
+  box-shadow:
+    0 0 18px rgba(160, 110, 255, 0.65),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
+.primary-btn:active {
+  transform: scale(0.97);
+  box-shadow:
+    0 0 12px rgba(160, 110, 255, 0.5),
+    0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Secondary: Stop Reading */
 .stop-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(190, 140, 255, 0.35);
-  border-radius: 999px;
-  padding: 12px 18px;
   color: #efe6ff;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  padding: 12px 20px;
+  cursor: pointer;
+
+  backdrop-filter: blur(8px);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.stop-btn:hover {
+  background: rgba(190, 140, 255, 0.18);
+}
+
+.stop-btn:active {
+  transform: scale(0.98);
 }
