@@ -1,16 +1,14 @@
 /* ============================
-   SIGN FROM URL (BULLETPROOF)
+   SIGN (URL → STORAGE → DEFAULT)
 ============================ */
 const params = new URLSearchParams(window.location.search);
 
 let sign =
   params.get("sign") ||
   localStorage.getItem("lastSign") ||
-  "virgo"; // safe default
+  "virgo";
 
 sign = sign.toLowerCase();
-
-// persist sign so refreshes work
 localStorage.setItem("lastSign", sign);
 
 const validSigns = [
@@ -25,7 +23,7 @@ if (!validSigns.includes(sign)) {
 }
 
 /* ============================
-   SET ZODIAC + DATE (FIXED)
+   SET HEADER (SIGN + DATE)
 ============================ */
 const zodiacEl = document.getElementById("zodiac-title");
 const dateEl = document.getElementById("date");
@@ -45,90 +43,60 @@ if (dateEl) {
 }
 
 /* ============================
-   LOAD GROK
+   LOAD DAILY READING (AUTO)
 ============================ */
-async function loadHoroscope() {
-  const res = await fetch("/.netlify/functions/grok", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sign })
-  });
+async function loadDailyHoroscope() {
+  try {
+    const res = await fetch("/.netlify/functions/grok", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sign })
+    });
 
-  const data = await res.json();
-  let text = data.output || "";
-
-  /* ----------------------------
-     NORMALIZE RAW OUTPUT
-  ---------------------------- */
-  text = text
-    .replace(/#{2,}/g, "")
-    .replace(/\r/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-
-  /* ----------------------------
-     FORCE STRUCTURE
-  ---------------------------- */
-  const sections = {
-    Horoscope: "",
-    Love: "",
-    Affirmation: ""
-  };
-
-  let current = null;
-
-  text.split("\n").forEach(line => {
-    const clean = line.trim();
-
-    if (/^horoscope$/i.test(clean)) {
-      current = "Horoscope";
-      return;
-    }
-    if (/^love$/i.test(clean)) {
-      current = "Love";
-      return;
-    }
-    if (/^affirmation$/i.test(clean)) {
-      current = "Affirmation";
-      return;
+    if (!res.ok) {
+      throw new Error("Failed to fetch daily reading");
     }
 
-    if (current) {
-      sections[current] += clean + " ";
+    const data = await res.json();
+
+    // EXPECT STRUCTURED RESPONSE
+    const { horoscope, love, affirmation } = data;
+
+    if (!horoscope || !love || !affirmation) {
+      throw new Error("Incomplete daily reading");
     }
-  });
 
-  /* ----------------------------
-     RENDER CLEAN OUTPUT
-  ---------------------------- */
-  const output = `
-    <span class="section-header">HOROSCOPE</span>
-    <p>${sections.Horoscope.trim()}</p>
+    document.getElementById("daily-horoscope").innerHTML = `
+      <span class="section-header">HOROSCOPE</span>
+      <p>${horoscope}</p>
 
-    <span class="section-header">LOVE</span>
-    <p>${sections.Love.trim()}</p>
+      <span class="section-header">LOVE</span>
+      <p>${love}</p>
 
-    <span class="section-header">AFFIRMATION</span>
-    <p>${sections.Affirmation.trim()}</p>
-  `;
+      <span class="section-header">AFFIRMATION</span>
+      <p>${affirmation}</p>
+    `;
 
-  document.getElementById("daily-horoscope").innerHTML = output;
+  } catch (err) {
+    console.error("Daily load error:", err);
+    document.getElementById("daily-horoscope").innerText =
+      "Today’s vibe is still forming. Please refresh.";
+  }
 }
 
-loadHoroscope();
+loadDailyHoroscope();
 
 /* ============================
-   ELEVENLABS AUDIO (FIXED)
+   ELEVENLABS AUDIO (PLAY ONLY)
 ============================ */
 let audio = null;
 let audioUrl = null;
 
 async function playHoroscopeAudio() {
   try {
-    const text = document.getElementById("daily-horoscope").innerText;
-
-    // Stop any existing audio first
     stopAudio();
+
+    const text = document.getElementById("daily-horoscope").innerText;
 
     const res = await fetch("/.netlify/functions/tts", {
       method: "POST",
@@ -137,26 +105,21 @@ async function playHoroscopeAudio() {
     });
 
     if (!res.ok) {
-      throw new Error("Audio request failed");
+      throw new Error("Audio generation failed");
     }
 
     const buffer = await res.arrayBuffer();
-
-    // Create audio blob
     const blob = new Blob([buffer], { type: "audio/mpeg" });
+
     audioUrl = URL.createObjectURL(blob);
+    audio = new Audio(audioUrl);
+    audio.playsInline = true;
 
-    // Create audio element
-    audio = new Audio();
-    audio.src = audioUrl;
-    audio.preload = "auto";
-    audio.playsInline = true; // IMPORTANT for iOS
-
-    // Force play (must be user-triggered)
     await audio.play();
+
   } catch (err) {
-    console.error("Audio playback failed:", err);
-    alert("Audio playback failed. Please tap again.");
+    console.error("Audio error:", err);
+    alert("Tap again to play audio.");
   }
 }
 
@@ -172,4 +135,3 @@ function stopAudio() {
     audioUrl = null;
   }
 }
-
