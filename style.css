@@ -1,18 +1,24 @@
-/* ===== RESET ===== */
+/* ===============================
+   GLOBAL RESET
+================================ */
 * {
   box-sizing: border-box;
-}
-
-body {
   margin: 0;
   padding: 0;
-  min-height: 100vh;
-  overflow-x: hidden;
-  font-family: 'Inter', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* Prevent scrolling */
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #000;
   color: #fff;
 }
 
-/* ===== VIDEO BACKGROUND ===== */
+/* ===============================
+   GALAXY VIDEO BACKGROUND
+================================ */
 .video-bg {
   position: fixed;
   inset: 0;
@@ -26,125 +32,149 @@ body {
   object-fit: cover;
 }
 
-/* Dark overlay for readability */
+/* Soft dark overlay for readability */
 .video-bg::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1;
 }
 
-/* ===== MAIN LAYOUT ===== */
+/* ===============================
+   MAIN LAYOUT (FIXES BLACK BAR)
+================================ */
 .app {
-  min-height: 100vh;
+  min-height: 100svh; /* mobile-safe viewport height */
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 1.5rem 1rem;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ===============================
+   CONTENT CARD
+================================ */
+.vibe-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(20, 8, 35, 0.65);
+  border-radius: 20px;
+  padding: 24px 20px 28px;
+  text-align: center;
+
+  box-shadow:
+    0 0 25px rgba(150, 90, 255, 0.25),
+    inset 0 0 0 1px rgba(180, 120, 255, 0.25);
+}
+
+/* ===============================
+   LOGO
+================================ */
+.logo {
+  width: 72px;
+  margin: 0 auto 14px;
+  display: block;
+}
+
+/* ===============================
+   TITLES & TEXT
+================================ */
+.todays-vibe-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  color: #e9d7ff;
+  margin-bottom: 6px;
+
+  text-shadow:
+    0 0 8px rgba(200, 150, 255, 0.4),
+    0 0 16px rgba(160, 100, 255, 0.25);
+}
+
+.sign-name {
+  font-size: 2.6rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #d9b8ff;
+
+  text-shadow:
+    0 0 10px rgba(185, 120, 255, 0.6),
+    0 0 20px rgba(185, 120, 255, 0.45),
+    0 0 35px rgba(140, 80, 255, 0.35);
+}
+
+.current-date {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin-bottom: 18px;
+}
+
+/* ===============================
+   READING TEXT
+================================ */
+.daily-reading {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #f2eaff;
+  margin-bottom: 22px;
   text-align: center;
 }
 
-/* ===== LOGO ===== */
-.logo img {
-  width: 90px;
-  margin-bottom: 0.5rem;
+/* ===============================
+   BUTTONS
+================================ */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* ===== SIGN ===== */
-.sign {
-  font-size: 2.8rem;
-  font-weight: 600;
-  margin: 0.2rem 0;
-  color: #c77dff;
-  text-shadow:
-    0 0 10px rgba(199,125,255,0.6),
-    0 0 30px rgba(199,125,255,0.4);
-}
-
-/* ===== DATE ===== */
-.date {
-  font-size: 0.95rem;
-  opacity: 0.85;
-  margin-bottom: 1.5rem;
-}
-
-/* ===== READING CARD ===== */
-.reading-card {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(35, 0, 60, 0.55);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.8rem;
-  box-shadow: 0 0 40px rgba(160, 100, 255, 0.25);
-  animation: fadeUp 0.8s ease-out;
-}
-
-.vibe-title {
-  font-family: 'Inter', sans-serif;
-  letter-spacing: 2px;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-  color: #e5c7ff;
-}
-
-/* Elegant reading font */
-.reading-card p {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.05rem;
-  line-height: 1.6;
-  max-width: 38ch;
-  margin: 0 auto;
-}
-
-/* ===== BUTTONS ===== */
-button {
-  width: 100%;
-  max-width: 420px;
-  padding: 1.1rem;
-  border-radius: 999px;
-  border: none;
-  font-size: 1.05rem;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-/* Primary */
 .primary-btn {
-  background: linear-gradient(135deg, #b983ff, #8b5cf6);
-  color: #fff;
+  background: linear-gradient(135deg, #9f6bff, #c59bff);
+  color: #1b062f;
+  font-size: 1rem;
   font-weight: 600;
-  box-shadow: 0 8px 30px rgba(160, 100, 255, 0.5);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 18px;
+  cursor: pointer;
+
+  box-shadow:
+    0 0 18px rgba(160, 110, 255, 0.65);
 }
 
-.primary-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 35px rgba(160, 100, 255, 0.7);
+.primary-btn:active {
+  transform: scale(0.97);
 }
 
-/* Stop Reading (calm + premium) */
 .stop-btn {
-  margin-top: 0.9rem;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ddd;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(180, 120, 255, 0.35);
+  color: #e6d9ff;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
   backdrop-filter: blur(10px);
 }
 
 .stop-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(180, 120, 255, 0.15);
 }
 
-/* ===== ANIMATION ===== */
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
+/* ===============================
+   MOBILE SAFETY
+================================ */
+@media (max-height: 650px) {
+  .vibe-card {
+    padding: 18px 16px 22px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .sign-name {
+    font-size: 2.2rem;
+  }
+
+  .daily-reading {
+    font-size: 0.95rem;
   }
 }
