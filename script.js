@@ -74,22 +74,13 @@ async function loadDailyHoroscope() {
     }
 
     const data = await res.json();
-    const { horoscope, love, affirmation } = data;
 
-    if (!horoscope || !love || !affirmation) {
-      throw new Error("Incomplete daily reading");
+    if (!data.text) {
+      throw new Error("Missing daily reading text");
     }
 
-    document.getElementById("daily-horoscope").innerHTML = `
-      <span class="section-header">HOROSCOPE</span>
-      <p>${horoscope}</p>
+    document.getElementById("daily-horoscope").innerText = data.text;
 
-      <span class="section-header">LOVE</span>
-      <p>${love}</p>
-
-      <span class="section-header">AFFIRMATION</span>
-      <p>${affirmation}</p>
-    `;
   } catch (err) {
     console.error("Daily load error:", err);
     document.getElementById("daily-horoscope").innerText =
@@ -109,7 +100,8 @@ async function playHoroscopeAudio() {
   try {
     stopAudio();
 
-    const text = document.getElementById("daily-horoscope").innerText;
+    const text =
+      document.getElementById("daily-horoscope").innerText;
 
     const res = await fetch("/.netlify/functions/tts", {
       method: "POST",
@@ -133,6 +125,7 @@ async function playHoroscopeAudio() {
     audio.playsInline = true;
 
     await audio.play();
+
   } catch (err) {
     console.error("Audio error:", err);
     alert("Tap again to play audio.");

@@ -1,5 +1,5 @@
 // netlify/functions/grok.js
-// Timezone-safe daily auto-generation with Upstash caching
+// Timezone-safe daily Grok horoscope with Upstash caching
 
 const { Redis } = require("@upstash/redis");
 
@@ -15,7 +15,7 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
 
     const sign = (body.sign || "virgo").toLowerCase();
-    const date = body.date; // PROVIDED BY USER TIMEZONE
+    const date = body.date; // USER-LOCAL DATE (timezone-safe)
 
     if (!date) {
       throw new Error("Missing date for timezone-safe rollover");
@@ -49,58 +49,48 @@ exports.handler = async (event) => {
           {
             role: "system",
             content: `
-You are Grok writing a daily horoscope reading.
+You are Grok.
 
-Tone:
-- Casual, grounded, modern
-- Natural and conversational
-- Confident without being dramatic
+Write a single, modern daily horoscope for the zodiac sign provided.
 
-Style:
-- Longer, developed paragraphs
-- Smooth emotional flow
-- No repetition
-- No headers inside text
+Tone & style:
+- Conversational, grounded, and confident
+- Casual but thoughtful
+- Sounds like the Grok app, not traditional astrology
+- Natural and human, not poetic or mystical
 
-Rules:
-- Do not introduce yourself
-- Do not add disclaimers
-- Do not explain astrology
-- Do not repeat section titles
-- Do not use markdown or symbols
-- Do not add closings or summaries
+Content rules:
+- ONE paragraph only
+- Keep the response between 250 and 350 characters total
+- Naturally include:
+  • today's general energy or focus
+  • a brief note on love or relationships
+  • one practical or real-world insight
+- Do NOT use section headers, bullet points, affirmations, emojis, or disclaimers
+- Avoid astrology mechanics, spiritual language, or dramatic phrasing
 
-Output EXACTLY three sections, separated by ||| like this:
-
-HOROSCOPE_TEXT ||| LOVE_TEXT ||| AFFIRMATION_TEXT
+This should feel like a quick daily vibe check someone would enjoy hearing out loud.
 `
           },
           {
             role: "user",
-            content: `Zodiac sign: ${sign}`
+            content: `Give me today's horoscope for ${sign}.`
           }
         ]
       })
     });
 
     const data = await response.json();
-    const raw = data?.choices?.[0]?.message?.content || "";
+    const text = data?.choices?.[0]?.message?.content?.trim();
 
-    const [horoscope, love, affirmation] = raw
-      .split("|||")
-      .map(s => s?.trim())
-      .filter(Boolean);
-
-    if (!horoscope || !love || !affirmation) {
-      throw new Error("Malformed Grok response");
+    if (!text) {
+      throw new Error("Empty Grok response");
     }
 
     const result = {
       sign,
       date,
-      horoscope,
-      love,
-      affirmation
+      text
     };
 
     /* ============================
