@@ -8,6 +8,13 @@ directory = "netlify/functions"
 [functions.environment]
 NETLIFY_USE_NODE_20 = "true"
 
+# =====================================
+# DAILY BACKGROUND PRE-GENERATION
+# =====================================
+[functions."pre-generate"]
+schedule = "@daily"
+
+
 
 
 
