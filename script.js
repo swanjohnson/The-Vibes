@@ -23,6 +23,19 @@ if (!validSigns.includes(sign)) {
 }
 
 /* ============================
+   USER-LOCAL DATE (TIMEZONE SAFE)
+============================ */
+function getLocalDateKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const localDateKey = getLocalDateKey();
+
+/* ============================
    SET HEADER (SIGN + DATE)
 ============================ */
 const zodiacEl = document.getElementById("zodiac-title");
@@ -50,7 +63,10 @@ async function loadDailyHoroscope() {
     const res = await fetch("/.netlify/functions/grok", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sign })
+      body: JSON.stringify({
+        sign,
+        date: localDateKey
+      })
     });
 
     if (!res.ok) {
@@ -58,8 +74,6 @@ async function loadDailyHoroscope() {
     }
 
     const data = await res.json();
-
-    // EXPECT STRUCTURED RESPONSE
     const { horoscope, love, affirmation } = data;
 
     if (!horoscope || !love || !affirmation) {
@@ -76,7 +90,6 @@ async function loadDailyHoroscope() {
       <span class="section-header">AFFIRMATION</span>
       <p>${affirmation}</p>
     `;
-
   } catch (err) {
     console.error("Daily load error:", err);
     document.getElementById("daily-horoscope").innerText =
@@ -116,7 +129,6 @@ async function playHoroscopeAudio() {
     audio.playsInline = true;
 
     await audio.play();
-
   } catch (err) {
     console.error("Audio error:", err);
     alert("Tap again to play audio.");

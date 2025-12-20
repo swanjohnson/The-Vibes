@@ -1,5 +1,5 @@
 // netlify/functions/grok.js
-// Guaranteed daily auto-generation with Upstash caching
+// Timezone-safe daily auto-generation with Upstash caching
 
 const { Redis } = require("@upstash/redis");
 
@@ -13,11 +13,15 @@ const API_KEY = process.env.XAI_API_KEY;
 exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
-    const sign = (body.sign || "virgo").toLowerCase();
 
-    // Use UTC date for now (timezone-safe can be added next)
-    const today = new Date().toISOString().split("T")[0];
-    const cacheKey = `horoscope:${sign}:${today}`;
+    const sign = (body.sign || "virgo").toLowerCase();
+    const date = body.date; // PROVIDED BY USER TIMEZONE
+
+    if (!date) {
+      throw new Error("Missing date for timezone-safe rollover");
+    }
+
+    const cacheKey = `horoscope:${sign}:${date}`;
 
     /* ============================
        CACHE CHECK
@@ -93,7 +97,7 @@ HOROSCOPE_TEXT ||| LOVE_TEXT ||| AFFIRMATION_TEXT
 
     const result = {
       sign,
-      date: today,
+      date,
       horoscope,
       love,
       affirmation
@@ -108,7 +112,6 @@ HOROSCOPE_TEXT ||| LOVE_TEXT ||| AFFIRMATION_TEXT
       statusCode: 200,
       body: JSON.stringify(result)
     };
-
   } catch (err) {
     console.error("Grok error:", err);
     return {
