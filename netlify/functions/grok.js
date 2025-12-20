@@ -1,5 +1,5 @@
 // netlify/functions/grok.js
-// Grok daily horoscope with Upstash Redis caching
+// Guaranteed daily auto-generation with Upstash caching
 
 const { Redis } = require("@upstash/redis");
 
@@ -13,26 +13,31 @@ const API_KEY = process.env.XAI_API_KEY;
 exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
-    const sign = (body.sign || "aries").toLowerCase();
+    const sign = (body.sign || "virgo").toLowerCase();
 
+    // Use UTC date for now (timezone-safe can be added next)
     const today = new Date().toISOString().split("T")[0];
-    const cacheKey = `${sign}-${today}`;
+    const cacheKey = `horoscope:${sign}:${today}`;
 
-    // ----- Cache check -----
+    /* ============================
+       CACHE CHECK
+    ============================ */
     const cached = await redis.get(cacheKey);
     if (cached) {
       return {
         statusCode: 200,
-        body: JSON.stringify({ output: cached })
+        body: JSON.stringify(cached)
       };
     }
 
-    // ----- Grok request -----
+    /* ============================
+       GROK GENERATION
+    ============================ */
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${API_KEY}`
+        Authorization: `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
         model: "grok-3-mini",
@@ -44,36 +49,26 @@ You are Grok writing a daily horoscope reading.
 
 Tone:
 - Casual, grounded, modern
-- Confident but not dramatic
-- Conversational, like a personal message
+- Natural and conversational
+- Confident without being dramatic
 
 Style:
-- Write in complete, flowing thoughts
-- Develop each idea instead of rushing it
-- Let the reading breathe emotionally
-- Astrology references are allowed naturally
-- Speak directly to the reader
-
-Guidance:
-- Expand on the main emotional theme of the day
-- Include nuance, reflection, and momentum
-- Avoid short or punchy summaries
-- Avoid being overly poetic or mystical
+- Longer, developed paragraphs
+- Smooth emotional flow
+- No repetition
+- No headers inside text
 
 Rules:
-- Do not explain astrology
-- Do not include disclaimers
-- Do not mention science or accuracy
-- Do not ask questions
-- Do not add a closing remark
 - Do not introduce yourself
-- Do not use markdown formatting or symbols
+- Do not add disclaimers
+- Do not explain astrology
+- Do not repeat section titles
+- Do not use markdown or symbols
+- Do not add closings or summaries
 
+Output EXACTLY three sections, separated by ||| like this:
 
-Structure:
-Horoscope:
-Love:
-Affirmation:
+HOROSCOPE_TEXT ||| LOVE_TEXT ||| AFFIRMATION_TEXT
 `
           },
           {
@@ -85,20 +80,40 @@ Affirmation:
     });
 
     const data = await response.json();
-    const output = data?.choices?.[0]?.message?.content || "";
+    const raw = data?.choices?.[0]?.message?.content || "";
 
-    await redis.set(cacheKey, output);
+    const [horoscope, love, affirmation] = raw
+      .split("|||")
+      .map(s => s?.trim())
+      .filter(Boolean);
+
+    if (!horoscope || !love || !affirmation) {
+      throw new Error("Malformed Grok response");
+    }
+
+    const result = {
+      sign,
+      date: today,
+      horoscope,
+      love,
+      affirmation
+    };
+
+    /* ============================
+       SAVE TO CACHE
+    ============================ */
+    await redis.set(cacheKey, result);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ output })
+      body: JSON.stringify(result)
     };
 
   } catch (err) {
     console.error("Grok error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Failed to generate reading" })
+      body: JSON.stringify({ error: "Failed to generate daily reading" })
     };
   }
 };
