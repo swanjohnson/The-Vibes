@@ -3,45 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AllVibes Horoscope</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>The Vibe</title>
 
   <!-- Elegant reading font -->
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- GALAXY VIDEO BACKGROUND -->
-  <video id="bg-video" autoplay muted loop playsinline>
-    <source src="/videos/galaxy.mp4" type="video/mp4" />
-  </video>
-
-  <div class="container">
-    <img src="logo.png" class="logo" alt="Logo" />
-
-    <!-- SIGN + DATE -->
-    <h1 id="zodiac-title">Loading…</h1>
-    <p id="date">Loading date…</p>
-
-    <!-- MAIN VIBE CARD -->
-    <div class="card">
-      <h2>TODAY'S VIBE</h2>
-      <div id="daily-horoscope">
-        Fetching your cosmic guidance…
-      </div>
-    </div>
-
-    <!-- AUDIO CONTROLS -->
-    <div class="speak-controls">
-      <button id="speak-btn" onclick="playHoroscopeAudio()">
-        🔮 Read My Horoscope
-      </button>
-
-      <button id="stop-btn" onclick="stopAudio()">
-        ✋ Stop Reading
-      </button>
-    </div>
+  <!-- 🌌 Galaxy Video Background -->
+  <div class="video-bg">
+    <video autoplay muted loop playsinline>
+      <source src="/videos/galaxy.mp4" type="video/mp4">
+    </video>
   </div>
+
+  <main class="app">
+
+    <!-- Logo -->
+    <div class="logo">
+      <img src="/logo.png" alt="The Vibe Logo" />
+    </div>
+
+    <!-- Sign + Date -->
+    <h1 class="sign" id="signName">Virgo</h1>
+    <p class="date" id="currentDate">Saturday, December 20</p>
+
+    <!-- Reading Card -->
+    <section class="reading-card">
+      <h2 class="vibe-title">TODAY'S VIBE</h2>
+      <p id="dailyReading">
+        Loading your daily vibe...
+      </p>
+    </section>
+
+    <!-- Buttons -->
+    <button class="primary-btn" onclick="playHoroscopeAudio()">
+      🔮 Read My Horoscope
+    </button>
+
+    <button class="stop-btn" onclick="stopAudio()">
+      ✋ Stop Reading
+    </button>
+
+  </main>
 
   <script src="script.js"></script>
 </body>
