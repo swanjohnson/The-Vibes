@@ -11,9 +11,29 @@ body {
 }
 
 /* ======================================
-   CONTAINER (tight + centered)
+   GALAXY VIDEO BACKGROUND
+====================================== */
+#bg-video {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  z-index: -10;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ======================================
+   CONTAINER (ABOVE VIDEO)
 ====================================== */
 .container {
+  position: relative;
+  z-index: 5;
   max-width: 700px;
   margin: 20px auto 40px;
   padding: 16px;
@@ -38,7 +58,7 @@ body {
 /* ======================================
    SIGN (MATCHES BUTTON GLOW)
 ====================================== */
-#sign {
+#zodiac-title {
   font-size: 42px;
   font-weight: 700;
   margin: 6px 0 4px;
@@ -57,42 +77,10 @@ body {
 }
 
 /* ======================================
-   BACKGROUND
-====================================== */
-.stars {
-  position: fixed;
-  inset: 0;
-  background: url("https://i.imgur.com/YKY28eT.png") repeat;
-  opacity: 0.7;
-  animation: starDrift 30s linear infinite;
-  z-index: -3;
-}
-
-@keyframes starDrift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-200px); }
-}
-
-.nebula {
-  position: fixed;
-  inset: 0;
-  background: url("https://raw.githubusercontent.com/AllSeeingAI/astro-assets/main/nebula-purple.png")
-    no-repeat center / cover;
-  opacity: 0.55;
-  animation: nebulaFloat 60s linear infinite;
-  z-index: -4;
-}
-
-@keyframes nebulaFloat {
-  0%, 100% { transform: scale(1.1); }
-  50% { transform: scale(1.2); }
-}
-
-/* ======================================
    CARD
 ====================================== */
 .card {
-  background: rgba(40, 0, 80, 0.55);
+  background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 180, 255, 0.35);
   border-radius: 18px;
   padding: 22px;
@@ -103,43 +91,23 @@ body {
     0 0 40px rgba(160, 60, 255, 0.25);
 }
 
-/* ======================================
-   TODAY'S VIBE (CENTERED)
-====================================== */
+/* TODAY'S VIBE */
 .card h2 {
   font-size: 26px;
   margin-bottom: 14px;
-  text-align: center;
   color: #f3d2ff;
-  text-shadow:
-    0 0 12px rgba(200, 120, 255, 0.6);
+  text-shadow: 0 0 12px rgba(200, 120, 255, 0.6);
 }
 
-/* ======================================
-   SECTION HEADERS
-====================================== */
-.section-header {
-  margin-top: 1.4rem;
-  margin-bottom: 0.4rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #d6a4ff;
-  text-align: center;
-}
-
-/* ======================================
-   READING TEXT (CENTERED + ELEGANT)
-====================================== */
-.card p {
+/* READING TEXT */
+#daily-horoscope {
   font-family: "Cormorant Garamond", serif;
   font-size: 19px;
   line-height: 1.6;
   color: #f6ecff;
   text-align: center;
-  margin: 0 auto;
   max-width: 92%;
+  margin: 0 auto;
 }
 
 /* ======================================
@@ -173,7 +141,7 @@ body {
   transform: scale(0.97);
 }
 
-/* STOP BUTTON (CALM, NOT ALARMING) */
+/* STOP BUTTON */
 #stop-btn {
   width: 100%;
   min-height: 64px;
@@ -184,8 +152,7 @@ body {
   cursor: pointer;
   background: linear-gradient(135deg, #2e1f3d, #1c1326);
   color: #e8d9ff;
-  box-shadow:
-    0 0 16px rgba(180, 120, 255, 0.35);
+  box-shadow: 0 0 16px rgba(180, 120, 255, 0.35);
 }
 
 #stop-btn:active {
