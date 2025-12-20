@@ -1,76 +1,84 @@
-// netlify/functions/tts.js
-// ElevenLabs TTS with DAILY CACHE (Grok-style)
+import { Redis } from "@upstash/redis";
+import fetch from "node-fetch";
 
-const fs = require("fs");
-const path = require("path");
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
-exports.handler = async (event) => {
+export async function handler(event) {
   try {
-    const { sign, text } = JSON.parse(event.body || "{}");
+    const { sign, date, text } = JSON.parse(event.body || "{}");
 
-    if (!text || !sign) {
-      return { statusCode: 400, body: "Missing sign or text" };
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-    const cacheFile = path.join("/tmp", `tts-${sign}-${today}.mp3`);
-
-    // 1️⃣ CHECK AUDIO CACHE
-    if (fs.existsSync(cacheFile)) {
-      const cachedAudio = fs.readFileSync(cacheFile);
+    if (!sign || !date || !text) {
       return {
-        statusCode: 200,
-        headers: { "Content-Type": "audio/mpeg" },
-        body: cachedAudio.toString("base64"),
-        isBase64Encoded: true
+        statusCode: 400,
+        body: "Missing sign, date, or text",
       };
     }
 
-    // 2️⃣ CALL ELEVENLABS (ONLY ON CACHE MISS)
-    const response = await fetch(
-      "https://api.elevenlabs.io/v1/text-to-speech/XrExE9yKIg1WjnnlVkGX",
+    const audioKey = `audio:${sign}:${date}`;
+
+    // ✅ Check audio cache
+    const cachedAudio = await redis.get(audioKey);
+    if (cachedAudio) {
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "public, max-age=86400",
+        },
+        body: cachedAudio,
+        isBase64Encoded: true,
+      };
+    }
+
+    // 🔊 Generate audio (ElevenLabs)
+    const elevenRes = await fetch(
+      "https://api.elevenlabs.io/v1/text-to-speech/a0Xwc8p0UGT1y2FQIO9p",
       {
         method: "POST",
         headers: {
-          "xi-api-key": process.env.ELEVEN_API_KEY,
           "Content-Type": "application/json",
-          "Accept": "audio/mpeg"
+          "xi-api-key": process.env.ELEVEN_API_KEY,
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_monolingual_v1",
+          model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.45,
-            similarity_boost: 0.85,
-            style: 0.35,
-            use_speaker_boost: true
-          }
-        })
+            stability: 0.4,
+            similarity_boost: 0.8,
+          },
+        }),
       }
     );
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(err);
+    if (!elevenRes.ok) {
+      throw new Error("ElevenLabs audio generation failed");
     }
 
-    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    const buffer = Buffer.from(await elevenRes.arrayBuffer());
+    const base64Audio = buffer.toString("base64");
 
-    // 3️⃣ SAVE AUDIO CACHE
-    fs.writeFileSync(cacheFile, audioBuffer);
+    // ✅ Store audio for the entire day
+    await redis.set(audioKey, base64Audio, {
+      ex: 60 * 60 * 24, // 24 hours
+    });
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "audio/mpeg" },
-      body: audioBuffer.toString("base64"),
-      isBase64Encoded: true
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "public, max-age=86400",
+      },
+      body: base64Audio,
+      isBase64Encoded: true,
     };
-
   } catch (err) {
     console.error("TTS error:", err);
     return {
       statusCode: 500,
-      body: err.message
+      body: "Audio generation failed",
     };
   }
-};
+}
