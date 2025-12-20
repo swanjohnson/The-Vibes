@@ -33,7 +33,6 @@ body {
   object-fit: cover;
 }
 
-/* Dark overlay */
 .video-bg::after {
   content: "";
   position: absolute;
@@ -42,7 +41,7 @@ body {
 }
 
 /* ===============================
-   APP LAYOUT (NO BLACK BAR)
+   APP LAYOUT
 ================================ */
 .app {
   min-height: 100vh;
@@ -60,7 +59,7 @@ body {
   max-width: 420px;
   background: rgba(20, 8, 35, 0.65);
   border-radius: 22px;
-  padding: 26px 22px 30px;
+  padding: 28px 22px 32px;
   text-align: center;
 
   box-shadow:
@@ -69,16 +68,17 @@ body {
 }
 
 /* ===============================
-   LOGO (UNCLIPPABLE)
+   LOGO
 ================================ */
 .logo {
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .logo img {
-  width: 72px;
+  width: 120px;
+  max-width: 40vw;
   height: auto;
-  filter: drop-shadow(0 0 18px rgba(185, 120, 255, 0.8));
+  filter: drop-shadow(0 0 26px rgba(190, 140, 255, 0.9));
 }
 
 /* ===============================
@@ -100,11 +100,11 @@ body {
 .vibe-title {
   font-size: 0.85rem;
   letter-spacing: 0.18em;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   color: #f0e6ff;
 }
 
-/* Glow utilities (LOCKED) */
+/* Glow utilities */
 .glow-text {
   text-shadow:
     0 0 10px rgba(185, 120, 255, 0.6),
@@ -119,13 +119,14 @@ body {
 }
 
 /* ===============================
-   READING TEXT
+   READING TEXT (NEW FONT)
 ================================ */
 .daily-reading {
-  font-size: 1rem;
-  line-height: 1.55;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.6;
   color: #f3eaff;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
 }
 
 /* ===============================
@@ -155,7 +156,6 @@ body {
   transform: scale(0.97);
 }
 
-/* Calm stop button */
 .stop-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(190, 140, 255, 0.35);
@@ -180,6 +180,6 @@ body {
   }
 
   .daily-reading {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 }

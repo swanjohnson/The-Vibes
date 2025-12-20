@@ -5,18 +5,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ===============================
-   LOAD DAILY HOROSCOPE (SAFE)
+   LOAD DAILY HOROSCOPE
 ================================ */
 async function loadDailyHoroscope() {
   try {
     const signEl = document.getElementById("signName");
     const dateEl = document.getElementById("currentDate");
     const readingEl = document.getElementById("dailyReading");
-
-    if (!signEl || !dateEl || !readingEl) {
-      console.error("Missing required DOM elements");
-      return;
-    }
 
     const params = new URLSearchParams(window.location.search);
     const sign = params.get("sign") || "virgo";
@@ -31,36 +26,34 @@ async function loadDailyHoroscope() {
       readingEl.innerText = data.reading;
     } else {
       readingEl.innerText =
-        "Today's vibe is still forming. Check back in a moment ✨";
+        "Today's vibe is still forming. Check back shortly.";
     }
 
   } catch (err) {
     console.error("Daily load error:", err);
-    const readingEl = document.getElementById("dailyReading");
-    if (readingEl) {
-      readingEl.innerText =
-        "Today's vibe is still forming. Please refresh shortly ✨";
-    }
   }
 }
 
 /* ===============================
-   AUDIO
+   AUDIO (FIXED)
 ================================ */
 async function playHoroscopeAudio() {
   try {
     stopAudio();
 
     const text = document.getElementById("dailyReading")?.innerText;
-    if (!text) return;
+    const sign = document.getElementById("signName")?.innerText?.toLowerCase();
+    const date = new Date().toISOString().split("T")[0];
+
+    if (!text || !sign) return;
 
     const res = await fetch("/.netlify/functions/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ sign, date, text })
     });
 
-    if (!res.ok) throw new Error("Audio generation failed");
+    if (!res.ok) throw new Error("Audio failed");
 
     const blob = await res.blob();
     audioPlayer = new Audio(URL.createObjectURL(blob));
