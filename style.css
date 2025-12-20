@@ -13,17 +13,19 @@ body {
   height: 100%;
   overflow: hidden;
   font-family: "Inter", system-ui, sans-serif;
-  background: #000;
+
+  /* IMPORTANT: allow video to show */
+  background: transparent;
   color: #fff;
 }
 
 /* ===============================
-   VIDEO BACKGROUND (FIXED)
+   VIDEO BACKGROUND (WORKING)
 ================================ */
 .video-bg {
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: 0; /* NOT negative */
   overflow: hidden;
 }
 
@@ -33,12 +35,13 @@ body {
   object-fit: cover;
 }
 
-/* overlay is now a REAL element, not ::after */
-.video-overlay {
+/* Optional subtle darkening WITHOUT blocking video */
+.video-bg::after {
+  content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: -1;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }
 
 /* ===============================
@@ -46,7 +49,7 @@ body {
 ================================ */
 .app {
   position: relative;
-  z-index: 1;
+  z-index: 1; /* UI above video */
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -125,7 +128,7 @@ body {
 }
 
 /* ===============================
-   BUTTONS
+   BUTTONS (UNCHANGED)
 ================================ */
 .actions {
   display: flex;
