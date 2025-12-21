@@ -32,22 +32,32 @@ async function redisSet(key, value) {
 }
 
 exports.handler = async (event) => {
+  console.log("🟢 TTS invoked:", event.httpMethod);
+
   try {
-    // ✅ Accept GET or POST
-    const sign =
-      event.queryStringParameters?.sign ||
-      (event.body ? JSON.parse(event.body).sign : null);
+    // ✅ GET-FIRST SIGN RESOLUTION (SAFE)
+    let sign = event.queryStringParameters?.sign;
+
+    // Optional POST support (safe)
+    if (!sign && event.body) {
+      try {
+        const body = JSON.parse(event.body);
+        sign = body.sign;
+      } catch (_) {}
+    }
 
     if (!sign) {
       return { statusCode: 400, body: "Missing sign" };
     }
 
+    sign = sign.toLowerCase();
     const date = todayISO();
     const audioKey = `audio:${sign}:${date}`;
 
-    // 1️⃣ Cache first
+    // 1️⃣ Cache
     const cached = await redisGet(audioKey);
     if (cached) {
+      console.log("🎧 Serving cached audio");
       return {
         statusCode: 200,
         headers: { "Content-Type": "audio/mpeg" },
@@ -64,8 +74,14 @@ exports.handler = async (event) => {
       body: JSON.stringify({ sign })
     });
 
+    if (!textRes.ok) {
+      console.error("❌ Grok fetch failed");
+      return { statusCode: 500, body: "Text fetch failed" };
+    }
+
     const textData = await textRes.json();
     const reading = textData?.reading;
+
     if (!reading) {
       return { statusCode: 500, body: "No reading" };
     }
@@ -85,6 +101,12 @@ exports.handler = async (event) => {
       })
     });
 
+    if (!ttsRes.ok) {
+      const err = await ttsRes.text();
+      console.error("❌ OpenAI TTS failed:", err);
+      return { statusCode: 500, body: "TTS failed" };
+    }
+
     const buffer = await ttsRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
 
@@ -100,7 +122,7 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
-    console.error("TTS error:", err);
+    console.error("🔥 TTS fatal error:", err);
     return { statusCode: 500, body: "TTS failure" };
   }
 };
