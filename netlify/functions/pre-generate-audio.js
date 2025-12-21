@@ -4,7 +4,6 @@ const SIGNS = [
   "sagittarius","capricorn","aquarius","pisces"
 ];
 
-// Same batching pattern you used for text
 const BATCH_SIZE = 3;
 
 function todayISO() {
@@ -64,8 +63,6 @@ async function generateAudio(text) {
 
 export async function handler(event) {
   const date = todayISO();
-
-  // Determine which batch to run
   const batch = Number(event.queryStringParameters?.batch || 0);
   const start = batch * BATCH_SIZE;
   const batchSigns = SIGNS.slice(start, start + BATCH_SIZE);
@@ -78,13 +75,17 @@ export async function handler(event) {
   }
 
   for (const sign of batchSigns) {
-    const textKey = `horoscope:${sign}:${date}`;
+    // 🔑 THIS IS THE IMPORTANT LINE
+    const textKey = `vibe:${sign}:${date}`;
     const audioKey = `audio:${sign}:${date}`;
 
     if (await redisGet(audioKey)) continue;
 
     const text = await redisGet(textKey);
-    if (!text) continue;
+    if (!text) {
+      console.log(`No text found for ${sign}, skipping audio`);
+      continue;
+    }
 
     const audioBase64 = await generateAudio(text);
     await redisSet(audioKey, audioBase64);
