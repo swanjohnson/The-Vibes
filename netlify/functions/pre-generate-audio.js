@@ -1,40 +1,12 @@
-const SIGNS = [
-  "aries","taurus","gemini","cancer",
-  "leo","virgo","libra","scorpio",
-  "sagittarius","capricorn","aquarius","pisces"
+const ZODIAC_BATCHES = [
+  ["aries", "taurus", "gemini"],
+  ["cancer", "leo", "virgo"],
+  ["libra", "scorpio", "sagittarius"],
+  ["capricorn", "aquarius", "pisces"]
 ];
-
-const BATCH_SIZE = 3;
 
 function todayISO() {
   return new Date().toISOString().split("T")[0];
-}
-
-async function redisGet(key) {
-  const res = await fetch(
-    `${process.env.UPSTASH_REDIS_REST_URL}/get/${key}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`
-      }
-    }
-  );
-  const json = await res.json();
-  return json?.result || null;
-}
-
-async function redisSet(key, value) {
-  await fetch(
-    `${process.env.UPSTASH_REDIS_REST_URL}/set/${key}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(value)
-    }
-  );
 }
 
 async function generateAudio(text) {
@@ -61,40 +33,72 @@ async function generateAudio(text) {
   return Buffer.from(buffer).toString("base64");
 }
 
-export async function handler(event) {
-  const date = todayISO();
-  const batch = Number(event.queryStringParameters?.batch || 0);
-  const start = batch * BATCH_SIZE;
-  const batchSigns = SIGNS.slice(start, start + BATCH_SIZE);
-
-  if (batchSigns.length === 0) {
-    return {
-      statusCode: 200,
-      body: "All audio batches complete"
-    };
-  }
-
-  for (const sign of batchSigns) {
-    // 🔑 THIS IS THE IMPORTANT LINE
-    const textKey = `vibe:${sign}:${date}`;
-    const audioKey = `audio:${sign}:${date}`;
-
-    if (await redisGet(audioKey)) continue;
-
-    const text = await redisGet(textKey);
-    if (!text) {
-      console.log(`No text found for ${sign}, skipping audio`);
-      continue;
+async function redisSet(key, value) {
+  await fetch(
+    `${process.env.UPSTASH_REDIS_REST_URL}/set/${key}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(value)
     }
+  );
+}
 
-    const audioBase64 = await generateAudio(text);
-    await redisSet(audioKey, audioBase64);
+export const handler = async () => {
+  const today = todayISO();
+  const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
 
-    console.log(`Audio generated for ${sign}`);
+  if (!baseUrl) {
+    console.error("❌ Missing site URL");
+    return { statusCode: 500 };
   }
 
-  return {
-    statusCode: 200,
-    body: `Batch ${batch} complete`
-  };
-}
+  console.log(`🔊 Pre-generating audio for ${today}`);
+
+  for (let i = 0; i < ZODIAC_BATCHES.length; i++) {
+    console.log(`🔁 Audio batch ${i + 1}/${ZODIAC_BATCHES.length}`);
+
+    for (const sign of ZODIAC_BATCHES[i]) {
+      try {
+        // 🔑 Get the horoscope text from grok (cached or fresh)
+        const res = await fetch(`${baseUrl}/.netlify/functions/grok`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sign,
+            date: today,
+            source: "audio-pre-generate"
+          })
+        });
+
+        if (!res.ok) {
+          console.error(`❌ Failed to fetch text for ${sign}`);
+          continue;
+        }
+
+        const data = await res.json();
+        const text = data?.text;
+
+        if (!text) {
+          console.error(`❌ No text returned for ${sign}`);
+          continue;
+        }
+
+        const audioBase64 = await generateAudio(text);
+        const audioKey = `audio:${sign}:${today}`;
+
+        await redisSet(audioKey, audioBase64);
+        console.log(`🔊 Audio generated for ${sign}`);
+
+      } catch (err) {
+        console.error(`🔥 Error generating audio for ${sign}:`, err.message);
+      }
+    }
+  }
+
+  console.log("🎉 Daily audio pre-generation complete");
+  return { statusCode: 200 };
+};
