@@ -1,7 +1,11 @@
 const SIGNS = [
-  "aries","taurus","gemini","cancer","leo","virgo",
-  "libra","scorpio","sagittarius","capricorn","aquarius","pisces"
+  "aries","taurus","gemini","cancer",
+  "leo","virgo","libra","scorpio",
+  "sagittarius","capricorn","aquarius","pisces"
 ];
+
+// Same batching pattern you used for text
+const BATCH_SIZE = 3;
 
 function todayISO() {
   return new Date().toISOString().split("T")[0];
@@ -16,7 +20,6 @@ async function redisGet(key) {
       }
     }
   );
-
   const json = await res.json();
   return json?.result || null;
 }
@@ -44,7 +47,7 @@ async function generateAudio(text) {
     },
     body: JSON.stringify({
       model: "tts-1-hd-1106",
-      voice: "shimmer",
+      voice: "alloy",
       input: text,
       format: "mp3"
     })
@@ -59,10 +62,22 @@ async function generateAudio(text) {
   return Buffer.from(buffer).toString("base64");
 }
 
-export async function handler() {
+export async function handler(event) {
   const date = todayISO();
 
-  for (const sign of SIGNS) {
+  // Determine which batch to run
+  const batch = Number(event.queryStringParameters?.batch || 0);
+  const start = batch * BATCH_SIZE;
+  const batchSigns = SIGNS.slice(start, start + BATCH_SIZE);
+
+  if (batchSigns.length === 0) {
+    return {
+      statusCode: 200,
+      body: "All audio batches complete"
+    };
+  }
+
+  for (const sign of batchSigns) {
     const textKey = `horoscope:${sign}:${date}`;
     const audioKey = `audio:${sign}:${date}`;
 
@@ -74,11 +89,11 @@ export async function handler() {
     const audioBase64 = await generateAudio(text);
     await redisSet(audioKey, audioBase64);
 
-    console.log(`Generated audio for ${sign}`);
+    console.log(`Audio generated for ${sign}`);
   }
 
   return {
     statusCode: 200,
-    body: "Daily audio generation complete"
+    body: `Batch ${batch} complete`
   };
 }
