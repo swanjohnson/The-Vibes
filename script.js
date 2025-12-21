@@ -14,9 +14,11 @@ async function loadDailyHoroscope() {
   const sign = params.get("sign") || "virgo";
 
   signEl.innerText = capitalize(sign);
-  dateEl.innerText = getLocalDateString();
+  dateEl.innerText = getUTCDateString();
 
-  const res = await fetch(`/.netlify/functions/get-daily?sign=${sign}`);
+  const res = await fetch(
+    `/.netlify/functions/get-daily?sign=${sign}`
+  );
   const data = await res.json();
 
   readingEl.innerText = data.reading;
@@ -39,12 +41,17 @@ async function playHoroscopeAudio() {
 
     if (!res.ok) throw new Error("Audio failed");
 
-    const base64 = await res.text();
-    audioPlayer = new Audio(`data:audio/mpeg;base64,${base64}`);
+    // 🔑 CRITICAL FIX: trim base64
+    const base64 = (await res.text()).trim();
+
+    audioPlayer = new Audio(
+      `data:audio/mpeg;base64,${base64}`
+    );
+
     await audioPlayer.play();
 
   } catch (err) {
-    console.error(err);
+    console.error("Audio error:", err);
   } finally {
     isLoadingAudio = false;
   }
@@ -58,11 +65,12 @@ function stopAudio() {
   }
 }
 
-function getLocalDateString() {
+function getUTCDateString() {
   return new Date().toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
-    day: "numeric"
+    day: "numeric",
+    timeZone: "UTC"
   });
 }
 
