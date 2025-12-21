@@ -11,7 +11,7 @@
 
   <title>The Vibe</title>
 
-  <!-- iOS status bar color fix -->
+  <!-- iOS status bar handling -->
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
@@ -53,4 +53,27 @@
 
       <!-- Reading -->
       <section class="reading-card">
-        <h2 class="vibe-title glow
+        <h2 class="vibe-title glow-soft">TODAY’S VIBE</h2>
+
+        <p class="daily-reading" id="dailyReading">
+          Loading your daily vibe...
+        </p>
+      </section>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="primary-btn" onclick="playHoroscopeAudio()">
+          🔮 Read My Horoscope
+        </button>
+
+        <button class="stop-btn" onclick="stopAudio()">
+          ✋ Stop Reading
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
