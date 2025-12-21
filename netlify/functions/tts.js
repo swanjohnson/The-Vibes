@@ -1,16 +1,3 @@
-import fetch from "node-fetch";
-
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-async function redisGet(key) {
-  const res = await fetch(`${REDIS_URL}/get/${key}`, {
-    headers: { Authorization: `Bearer ${REDIS_TOKEN}` }
-  });
-  const json = await res.json();
-  return json?.result || null;
-}
-
 export async function handler(event) {
   try {
     if (event.httpMethod !== "POST") {
@@ -23,8 +10,19 @@ export async function handler(event) {
       return { statusCode: 400, body: "Missing sign or date" };
     }
 
+    const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+    const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
     const cacheKey = `audio:${sign}:${date}`;
-    const audioBase64 = await redisGet(cacheKey);
+
+    const redisRes = await fetch(`${REDIS_URL}/get/${cacheKey}`, {
+      headers: {
+        Authorization: `Bearer ${REDIS_TOKEN}`
+      }
+    });
+
+    const redisJson = await redisRes.json();
+    const audioBase64 = redisJson?.result;
 
     if (!audioBase64) {
       return { statusCode: 404, body: "Audio not ready yet" };
