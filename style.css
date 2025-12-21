@@ -50,7 +50,8 @@ body {
 .app {
   position: relative;
   z-index: 1; /* UI above video */
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100vh; /* fallback */
   display: flex;
   align-items: center;
   justify-content: center;
