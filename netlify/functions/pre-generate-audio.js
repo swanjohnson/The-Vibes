@@ -39,7 +39,7 @@ async function redisSet(key, value) {
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+        Authorization: `Bearer ${process.env.UPSTASH_REST_TOKEN}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(value)
@@ -63,7 +63,6 @@ export const handler = async () => {
 
     for (const sign of ZODIAC_BATCHES[i]) {
       try {
-        // 🔑 Get the horoscope text from grok (cached or fresh)
         const res = await fetch(`${baseUrl}/.netlify/functions/grok`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -75,15 +74,17 @@ export const handler = async () => {
         });
 
         if (!res.ok) {
-          console.error(`❌ Failed to fetch text for ${sign}`);
+          console.error(`❌ Failed to fetch vibe for ${sign}`);
           continue;
         }
 
         const data = await res.json();
-        const text = data?.text;
+
+        // 🔑 THIS IS THE FIX
+        const text = data?.vibe;
 
         if (!text) {
-          console.error(`❌ No text returned for ${sign}`);
+          console.error(`❌ No vibe returned for ${sign}`);
           continue;
         }
 
