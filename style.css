@@ -74,6 +74,16 @@ body {
     inset 0 0 0 1px rgba(190, 140, 255, 0.25);
 }
 
+.vibe-card {
+  transform: translateY(-2vh);
+}
+
+@media (min-width: 768px) {
+  .vibe-card {
+    transform: translateY(0);
+  }
+}
+
 /* ===============================
    LOGO
 ================================ */
