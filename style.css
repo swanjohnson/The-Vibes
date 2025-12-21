@@ -1,3 +1,6 @@
+/* ===============================
+   RESET
+================================ */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -12,11 +15,13 @@ body {
   font-family: "Inter", system-ui, sans-serif;
   color: #fff;
 
-  /* MATCH STATUS BAR COLOR */
+  /* Matches iOS status bar */
   background: #12071f;
 }
 
-/* VIDEO */
+/* ===============================
+   VIDEO BACKGROUND
+================================ */
 .video-bg {
   position: fixed;
   inset: 0;
@@ -36,34 +41,41 @@ body {
   background: rgba(0, 0, 0, 0.35);
 }
 
-/* APP */
+/* ===============================
+   APP LAYOUT
+================================ */
 .app {
   position: relative;
   z-index: 1;
+
   min-height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
+
   padding:
-    calc(16px + env(safe-area-inset-top))
-    16px
-    calc(16px + env(safe-area-inset-bottom));
+    calc(18px + env(safe-area-inset-top))
+    18px
+    calc(18px + env(safe-area-inset-bottom));
 }
 
-/* CARD */
+/* ===============================
+   CARD (STRONGER GLOW)
+================================ */
 .vibe-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(20, 8, 35, 0.7);
-  border-radius: 22px;
-  padding: 28px 22px 32px;
+  background: rgba(22, 10, 38, 0.75);
+  border-radius: 24px;
+  padding: 30px 24px 34px;
   text-align: center;
 
   box-shadow:
-    0 0 28px rgba(160, 110, 255, 0.35),
-    inset 0 0 0 1px rgba(190, 140, 255, 0.25);
+    0 0 18px rgba(170, 120, 255, 0.45),
+    0 0 42px rgba(150, 90, 255, 0.55),
+    inset 0 0 0 1px rgba(210, 170, 255, 0.35);
 
-  max-height: calc(100svh - 32px);
+  max-height: calc(100svh - 36px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -72,61 +84,106 @@ body {
   display: none;
 }
 
-/* LOGO */
+/* ===============================
+   LOGO
+================================ */
 .logo img {
   width: 120px;
-  margin-bottom: 18px;
-  filter: drop-shadow(0 0 26px rgba(190, 140, 255, 0.9));
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 28px rgba(200, 150, 255, 0.9));
 }
 
-/* TEXT */
+/* ===============================
+   HEADINGS
+================================ */
 .sign {
-  font-size: 2.6rem;
+  font-size: 2.7rem;
   font-weight: 600;
-  color: #d9b8ff;
+  color: #e2c6ff;
 }
 
 .date {
-  font-size: 0.8rem;
-  opacity: 0.75;
-  margin-bottom: 18px;
-}
-
-.vibe-title {
   font-size: 0.85rem;
-  letter-spacing: 0.18em;
-  margin-bottom: 12px;
+  opacity: 0.75;
+  margin-bottom: 20px;
 }
 
+/* TODAY'S VIBE — larger + clearer */
+.vibe-title {
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 14px;
+  color: #f3e8ff;
+}
+
+/* ===============================
+   GLOW TEXT
+================================ */
+.glow-text {
+  text-shadow:
+    0 0 12px rgba(185, 120, 255, 0.7),
+    0 0 26px rgba(160, 100, 255, 0.6),
+    0 0 44px rgba(140, 80, 255, 0.45);
+}
+
+.glow-soft {
+  text-shadow:
+    0 0 10px rgba(200, 150, 255, 0.55),
+    0 0 22px rgba(160, 100, 255, 0.45);
+}
+
+/* ===============================
+   READING (PREMIUM FONT)
+================================ */
 .daily-reading {
-  font-family: "DM Sans", system-ui, sans-serif;
-  font-size: 1.05rem;
-  line-height: 1.6;
-  margin-bottom: 26px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.15rem;
+  line-height: 1.65;
+  color: #f6efff;
+  margin-bottom: 30px;
 }
 
-/* BUTTONS */
+/* ===============================
+   BUTTONS (MORE MOBILE-FRIENDLY)
+================================ */
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
+/* Primary */
 .primary-btn {
-  background: linear-gradient(135deg, #9f6bff, #c59bff);
-  color: #1b062f;
+  background: linear-gradient(135deg, #b68cff, #d2b4ff);
+  color: #2a0d44;
+  font-size: 1.1rem;
+  font-weight: 600;
   border: none;
   border-radius: 999px;
-  padding: 15px 20px;
-  font-weight: 600;
+  padding: 18px 22px;
+  cursor: pointer;
+
+  box-shadow:
+    0 0 22px rgba(180, 120, 255, 0.75),
+    0 10px 26px rgba(0, 0, 0, 0.35);
+
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
+.primary-btn:active {
+  transform: scale(0.97);
+}
+
+/* Secondary */
 .stop-btn {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(190, 140, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(210, 170, 255, 0.45);
+  color: #f3e8ff;
+  font-size: 1rem;
   border-radius: 999px;
-  padding: 12px 20px;
-  color: #efe6ff;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  padding: 15px 22px;
+  cursor: pointer;
+
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
