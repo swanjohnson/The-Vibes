@@ -7,13 +7,36 @@ environment = { NODE_VERSION = "18" }
 directory = "netlify/functions"
 
 # =====================================
-# DAILY BACKGROUND PRE-GENERATION
+# DAILY TEXT PRE-GENERATION (BATCHED)
 # =====================================
-[functions."pre-generate"]
-schedule = "@daily"
+
+[[scheduled.functions]]
+name = "pre-generate"
+cron = "0 4 * * *"
+arguments = { batch = "0" }
+
+[[scheduled.functions]]
+name = "pre-generate"
+cron = "1 4 * * *"
+arguments = { batch = "1" }
+
+[[scheduled.functions]]
+name = "pre-generate"
+cron = "2 4 * * *"
+arguments = { batch = "2" }
+
+[[scheduled.functions]]
+name = "pre-generate"
+cron = "3 4 * * *"
+arguments = { batch = "3" }
+
+# =====================================
+# DAILY AUDIO PRE-GENERATION (OPTIONAL)
+# =====================================
 
 [functions."pre-generate-audio"]
 schedule = "@daily"
+
 
 
 

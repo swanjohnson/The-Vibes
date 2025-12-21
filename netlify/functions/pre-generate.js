@@ -10,23 +10,16 @@ function todayISO() {
 }
 
 exports.handler = async (event) => {
-  const today = todayISO();
   const batchIndex = Number(event.queryStringParameters?.batch || 0);
   const batch = ZODIAC_BATCHES[batchIndex];
 
-  const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
-  if (!baseUrl) {
-    console.error("❌ Missing site URL");
-    return { statusCode: 500 };
+  if (!batch) {
+    console.log("ℹ️ No batch for index", batchIndex);
+    return { statusCode: 200 };
   }
 
-  if (!batch) {
-    console.log("🎉 All horoscope batches complete");
-    return {
-      statusCode: 200,
-      body: "All batches complete"
-    };
-  }
+  const today = todayISO();
+  const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
 
   console.log(`🔮 Generating batch ${batchIndex + 1}/4`);
 
@@ -43,28 +36,17 @@ exports.handler = async (event) => {
       });
 
       if (!res.ok) {
-        console.error(`❌ Failed: ${sign} (${res.status})`);
+        console.error(`❌ Failed: ${sign}`);
       } else {
         console.log(`✅ Generated: ${sign}`);
       }
-
     } catch (err) {
-      console.error(`🔥 Error generating ${sign}:`, err.message);
+      console.error(`🔥 Error for ${sign}:`, err.message);
     }
-  }
-
-  // 🔁 Trigger next batch
-  const nextBatch = batchIndex + 1;
-  if (ZODIAC_BATCHES[nextBatch]) {
-    console.log(`➡️ Triggering batch ${nextBatch + 1}`);
-
-    await fetch(
-      `${baseUrl}/.netlify/functions/pre-generate?batch=${nextBatch}`
-    );
   }
 
   return {
     statusCode: 200,
-    body: `Batch ${batchIndex} complete`
+    body: `Batch ${batchIndex} done`
   };
 };
