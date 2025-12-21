@@ -11,12 +11,17 @@ async function redisGet(key) {
       }
     }
   );
+
+  if (!res.ok) {
+    throw new Error("Redis GET failed");
+  }
+
   const json = await res.json();
   return json?.result || null;
 }
 
 async function redisSet(key, value) {
-  await fetch(
+  const res = await fetch(
     `${process.env.UPSTASH_REDIS_REST_URL}/set/${key}`,
     {
       method: "POST",
@@ -27,6 +32,10 @@ async function redisSet(key, value) {
       body: JSON.stringify(value)
     }
   );
+
+  if (!res.ok) {
+    throw new Error("Redis SET failed");
+  }
 }
 
 async function generateAudio(text) {
@@ -60,29 +69,26 @@ export async function handler(event) {
 
     const body = JSON.parse(event.body || "{}");
     const sign = body.sign?.toLowerCase();
-    const date = todayISO(); // 🔑 FORCE CANONICAL DATE
 
     if (!sign) {
       return { statusCode: 400, body: "Missing sign" };
     }
 
+    const date = todayISO();
     const audioKey = `audio:${sign}:${date}`;
 
-    // 1️⃣ Try cache first
+    // 1️⃣ Cache first
     const cachedAudio = await redisGet(audioKey);
     if (cachedAudio) {
       return {
         statusCode: 200,
-        headers: {
-          "Content-Type": "audio/mpeg",
-          "Cache-Control": "public, max-age=31536000"
-        },
+        headers: { "Content-Type": "audio/mpeg" },
         body: cachedAudio,
         isBase64Encoded: true
       };
     }
 
-    // 2️⃣ Fallback: fetch text from Grok
+    // 2️⃣ Get text from Grok
     const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
     const textRes = await fetch(`${baseUrl}/.netlify/functions/grok`, {
       method: "POST",
@@ -90,32 +96,36 @@ export async function handler(event) {
       body: JSON.stringify({ sign })
     });
 
+    if (!textRes.ok) {
+      throw new Error("Failed to fetch text");
+    }
+
     const textData = await textRes.json();
     const reading = textData?.reading;
 
     if (!reading) {
-      return { statusCode: 404, body: "No reading available" };
+      throw new Error("No reading returned");
     }
 
-    // 3️⃣ Generate audio live
+    // 3️⃣ Generate audio
     const audioBase64 = await generateAudio(reading);
 
-    // 4️⃣ Cache it for future users
+    // 4️⃣ Cache it
     await redisSet(audioKey, audioBase64);
 
-    // 5️⃣ Return it immediately
+    // 5️⃣ Return it
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=31536000"
-      },
+      headers: { "Content-Type": "audio/mpeg" },
       body: audioBase64,
       isBase64Encoded: true
     };
 
   } catch (err) {
-    console.error("TTS error:", err);
-    return { statusCode: 500, body: "Audio error" };
+    console.error("TTS FUNCTION ERROR:", err);
+    return {
+      statusCode: 500,
+      body: "TTS failure"
+    };
   }
 }
