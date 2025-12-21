@@ -1,4 +1,4 @@
-function todayISO() {
+function todayUTC() {
   return new Date().toISOString().split("T")[0];
 }
 
@@ -13,16 +13,28 @@ async function redisGet(key) {
   );
 
   if (!res.ok) return null;
+
   const json = await res.json();
-  return json?.result || null;
+  if (!json?.result) return null;
+
+  // 🔑 CRITICAL FIX: normalize Redis value
+  if (typeof json.result === "string") {
+    try {
+      return JSON.parse(json.result);
+    } catch {
+      return null;
+    }
+  }
+
+  return json.result;
 }
 
 exports.handler = async (event) => {
   try {
-    const sign = event.queryStringParameters?.sign?.toLowerCase() || "virgo";
-    const date = todayISO();
-    const key = `horoscope:${sign}:${date}`;
+    const sign =
+      event.queryStringParameters?.sign?.toLowerCase() || "virgo";
 
+    const key = `horoscope:${sign}:${todayUTC()}`;
     const cached = await redisGet(key);
 
     if (!cached?.reading) {

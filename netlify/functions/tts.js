@@ -1,4 +1,4 @@
-function todayISO() {
+function todayUTC() {
   return new Date().toISOString().split("T")[0];
 }
 
@@ -13,8 +13,19 @@ async function redisGet(key) {
   );
 
   if (!res.ok) return null;
+
   const json = await res.json();
-  return json?.result || null;
+  if (!json?.result) return null;
+
+  if (typeof json.result === "string") {
+    try {
+      return JSON.parse(json.result);
+    } catch {
+      return null;
+    }
+  }
+
+  return json.result;
 }
 
 async function redisSet(key, value) {
@@ -38,11 +49,11 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: "Missing sign" };
     }
 
-    const date = todayISO();
-    const audioKey = `audio:${sign}:${date}`;
+    const date = todayUTC();
     const textKey = `horoscope:${sign}:${date}`;
+    const audioKey = `audio:${sign}:${date}`;
 
-    /* 1️⃣ Serve cached audio */
+    // 1️⃣ Serve cached audio
     const cachedAudio = await redisGet(audioKey);
     if (cachedAudio) {
       return {
@@ -53,7 +64,7 @@ exports.handler = async (event) => {
       };
     }
 
-    /* 2️⃣ Read cached text (SINGLE SOURCE OF TRUTH) */
+    // 2️⃣ Read cached text
     const cachedText = await redisGet(textKey);
     if (!cachedText?.reading) {
       return {
@@ -62,7 +73,7 @@ exports.handler = async (event) => {
       };
     }
 
-    /* 3️⃣ Generate audio via OpenAI */
+    // 3️⃣ Generate audio
     const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: {
@@ -86,7 +97,6 @@ exports.handler = async (event) => {
     const buffer = await ttsRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
 
-    /* 4️⃣ Cache audio */
     await redisSet(audioKey, base64);
 
     return {
