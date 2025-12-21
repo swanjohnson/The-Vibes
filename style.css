@@ -13,28 +13,35 @@ body {
   height: 100%;
   overflow: hidden;
   font-family: "Inter", system-ui, sans-serif;
-
-  /* Paint behind iOS status bar */
-  background: #000;
   color: #fff;
+
+  /* iOS paints status bar from here */
+  background: transparent;
 }
 
 /* ===============================
-   VIDEO BACKGROUND
+   VIDEO BACKGROUND (FIXED FOR iOS)
 ================================ */
 .video-bg {
   position: fixed;
-  inset: 0;
+
+  /* Pull video INTO the safe area */
+  top: calc(-1 * env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  bottom: 0;
+
   z-index: 0;
   overflow: hidden;
 }
 
 .video-bg video {
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh + env(safe-area-inset-top));
   object-fit: cover;
 }
 
+/* Darken video slightly */
 .video-bg::after {
   content: "";
   position: absolute;
@@ -82,7 +89,7 @@ body {
   transform: translateY(-2vh);
   will-change: transform;
 
-  /* CRITICAL FIX: allow internal scroll */
+  /* Allow internal scroll if needed */
   max-height: calc(100svh - 32px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -164,7 +171,6 @@ body {
   gap: 14px;
 }
 
-/* Primary: Read My Horoscope */
 .primary-btn {
   background: linear-gradient(135deg, #9f6bff, #c59bff);
   color: #1b062f;
@@ -184,12 +190,8 @@ body {
 
 .primary-btn:active {
   transform: scale(0.97);
-  box-shadow:
-    0 0 12px rgba(160, 110, 255, 0.5),
-    0 3px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Secondary: Stop Reading */
 .stop-btn {
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(190, 140, 255, 0.35);
@@ -199,17 +201,6 @@ body {
   padding: 12px 20px;
   cursor: pointer;
 
-  /* Safari + modern browsers */
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.stop-btn:hover {
-  background: rgba(190, 140, 255, 0.18);
-}
-
-.stop-btn:active {
-  transform: scale(0.98);
 }
