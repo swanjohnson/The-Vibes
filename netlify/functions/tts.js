@@ -32,61 +32,37 @@ async function redisSet(key, value) {
 }
 
 exports.handler = async (event) => {
-  console.log("🟢 TTS invoked:", event.httpMethod);
-
   try {
-    // ✅ GET-FIRST SIGN RESOLUTION (SAFE)
-    let sign = event.queryStringParameters?.sign;
-
-    // Optional POST support (safe)
-    if (!sign && event.body) {
-      try {
-        const body = JSON.parse(event.body);
-        sign = body.sign;
-      } catch (_) {}
-    }
-
+    const sign = event.queryStringParameters?.sign?.toLowerCase();
     if (!sign) {
       return { statusCode: 400, body: "Missing sign" };
     }
 
-    sign = sign.toLowerCase();
     const date = todayISO();
     const audioKey = `audio:${sign}:${date}`;
+    const textKey = `horoscope:${sign}:${date}`;
 
-    // 1️⃣ Cache
-    const cached = await redisGet(audioKey);
-    if (cached) {
-      console.log("🎧 Serving cached audio");
+    /* 1️⃣ Serve cached audio */
+    const cachedAudio = await redisGet(audioKey);
+    if (cachedAudio) {
       return {
         statusCode: 200,
         headers: { "Content-Type": "audio/mpeg" },
-        body: cached,
+        body: cachedAudio,
         isBase64Encoded: true
       };
     }
 
-    // 2️⃣ Fetch text
-    const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
-    const textRes = await fetch(`${baseUrl}/.netlify/functions/grok`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sign })
-    });
-
-    if (!textRes.ok) {
-      console.error("❌ Grok fetch failed");
-      return { statusCode: 500, body: "Text fetch failed" };
+    /* 2️⃣ Read cached text (SINGLE SOURCE OF TRUTH) */
+    const cachedText = await redisGet(textKey);
+    if (!cachedText?.reading) {
+      return {
+        statusCode: 500,
+        body: "Daily horoscope text not found"
+      };
     }
 
-    const textData = await textRes.json();
-    const reading = textData?.reading;
-
-    if (!reading) {
-      return { statusCode: 500, body: "No reading" };
-    }
-
-    // 3️⃣ Generate audio
+    /* 3️⃣ Generate audio via OpenAI */
     const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: {
@@ -96,24 +72,23 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: "tts-1-hd-1106",
         voice: "alloy",
-        input: reading,
+        input: cachedText.reading,
         format: "mp3"
       })
     });
 
     if (!ttsRes.ok) {
       const err = await ttsRes.text();
-      console.error("❌ OpenAI TTS failed:", err);
+      console.error("OpenAI TTS error:", err);
       return { statusCode: 500, body: "TTS failed" };
     }
 
     const buffer = await ttsRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
 
-    // 4️⃣ Cache
+    /* 4️⃣ Cache audio */
     await redisSet(audioKey, base64);
 
-    // 5️⃣ Return
     return {
       statusCode: 200,
       headers: { "Content-Type": "audio/mpeg" },
@@ -122,7 +97,7 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
-    console.error("🔥 TTS fatal error:", err);
+    console.error("TTS fatal error:", err);
     return { statusCode: 500, body: "TTS failure" };
   }
 };

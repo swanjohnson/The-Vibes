@@ -1,69 +1,52 @@
 let audioPlayer = null;
+let isLoadingAudio = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   loadDailyHoroscope();
 });
 
-/* ===============================
-   LOAD DAILY HOROSCOPE
-================================ */
 async function loadDailyHoroscope() {
-  try {
-    const signEl = document.getElementById("signName");
-    const dateEl = document.getElementById("currentDate");
-    const readingEl = document.getElementById("dailyReading");
+  const signEl = document.getElementById("signName");
+  const dateEl = document.getElementById("currentDate");
+  const readingEl = document.getElementById("dailyReading");
 
-    const params = new URLSearchParams(window.location.search);
-    const sign = params.get("sign") || "virgo";
+  const params = new URLSearchParams(window.location.search);
+  const sign = params.get("sign") || "virgo";
 
-    signEl.innerText = capitalize(sign);
-    dateEl.innerText = getLocalDateString();
+  signEl.innerText = capitalize(sign);
+  dateEl.innerText = getLocalDateString();
 
-    const res = await fetch(`/.netlify/functions/grok?sign=${sign}`);
-    const data = await res.json();
+  const res = await fetch(`/.netlify/functions/get-daily?sign=${sign}`);
+  const data = await res.json();
 
-    if (data?.reading) {
-      readingEl.innerText = data.reading;
-    } else {
-      readingEl.innerText =
-        "Today's vibe is still forming. Check back shortly.";
-    }
-
-  } catch (err) {
-    console.error("Daily load error:", err);
-  }
+  readingEl.innerText = data.reading;
 }
 
-/* ===============================
-   AUDIO (FINAL + WORKING)
-================================ */
 async function playHoroscopeAudio() {
+  if (isLoadingAudio) return;
+  isLoadingAudio = true;
+
   try {
     stopAudio();
 
     const sign = document
       .getElementById("signName")
-      ?.innerText?.toLowerCase();
+      .innerText.toLowerCase();
 
-    if (!sign) return;
-
-    // ✅ GET request with query param (matches working backend)
     const res = await fetch(
-      `/.netlify/functions/tts?sign=${encodeURIComponent(sign)}`
+      `/.netlify/functions/tts?sign=${sign}`
     );
 
     if (!res.ok) throw new Error("Audio failed");
 
-    const blob = await res.blob();
-    const audioUrl = URL.createObjectURL(blob);
-
-    audioPlayer = new Audio(audioUrl);
-
-    // iOS-safe playback
+    const base64 = await res.text();
+    audioPlayer = new Audio(`data:audio/mpeg;base64,${base64}`);
     await audioPlayer.play();
 
   } catch (err) {
-    console.error("Audio error:", err);
+    console.error(err);
+  } finally {
+    isLoadingAudio = false;
   }
 }
 
@@ -75,9 +58,6 @@ function stopAudio() {
   }
 }
 
-/* ===============================
-   HELPERS
-================================ */
 function getLocalDateString() {
   return new Date().toLocaleDateString(undefined, {
     weekday: "long",

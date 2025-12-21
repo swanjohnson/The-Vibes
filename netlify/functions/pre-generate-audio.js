@@ -9,27 +9,19 @@ function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-async function generateAudio(text) {
-  const res = await fetch("https://api.openai.com/v1/audio/speech", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "tts-1-hd-1106",
-      voice: "alloy",
-      input: text,
-      format: "mp3"
-    })
-  });
+async function redisGet(key) {
+  const res = await fetch(
+    `${process.env.UPSTASH_REDIS_REST_URL}/get/${key}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`
+      }
+    }
+  );
 
-  if (!res.ok) {
-    throw new Error(await res.text());
-  }
-
-  const buffer = await res.arrayBuffer();
-  return Buffer.from(buffer).toString("base64");
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json?.result || null;
 }
 
 async function redisSet(key, value) {
@@ -46,46 +38,50 @@ async function redisSet(key, value) {
   );
 }
 
+async function generateAudio(text) {
+  const res = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "tts-1-hd-1106",
+      voice: "alloy",
+      input: text,
+      format: "mp3"
+    })
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+
+  const buffer = await res.arrayBuffer();
+  return Buffer.from(buffer).toString("base64");
+}
+
 export const handler = async (event) => {
   const today = todayISO();
-  const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
-
   const batchIndex = Number(event.queryStringParameters?.batch || 0);
   const batch = ZODIAC_BATCHES[batchIndex];
 
   if (!batch) {
-    return {
-      statusCode: 200,
-      body: "All audio batches complete"
-    };
+    return { statusCode: 200, body: "All audio batches complete" };
   }
 
-  console.log(`🔊 Generating audio batch ${batchIndex + 1}/4`);
-
   for (const sign of batch) {
+    const textKey = `horoscope:${sign}:${today}`;
+    const audioKey = `audio:${sign}:${today}`;
+
     try {
-      const res = await fetch(`${baseUrl}/.netlify/functions/grok`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sign, date: today })
-      });
+      const cachedText = await redisGet(textKey);
+      if (!cachedText?.reading) continue;
 
-      const data = await res.json();
-      const reading = data?.reading;
+      const audio = await generateAudio(cachedText.reading);
+      await redisSet(audioKey, audio);
 
-      if (!reading) {
-        console.error(`❌ No reading for ${sign}`);
-        continue;
-      }
-
-      const audioKey = `audio:${sign}:${today}`;
-      const audioBase64 = await generateAudio(reading);
-
-      await redisSet(audioKey, audioBase64);
-      console.log(`🔊 Audio generated for ${sign}`);
-
+      console.log(`🔊 Audio ready for ${sign}`);
     } catch (err) {
-      console.error(`🔥 Audio error for ${sign}:`, err.message);
+      console.error(`Audio error for ${sign}:`, err.message);
     }
   }
 
