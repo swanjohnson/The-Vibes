@@ -41,16 +41,9 @@ async function playHoroscopeAudio() {
 
     if (!res.ok) throw new Error("Audio fetch failed");
 
-    const base64 = (await res.text()).trim();
-
-    // 🔑 BULLETPROOF FIX: base64 → Blob
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-
-    const blob = new Blob([bytes], { type: "audio/mpeg" });
+    // 🔑 CORRECT: Netlify already decoded base64 → binary
+    const buffer = await res.arrayBuffer();
+    const blob = new Blob([buffer], { type: "audio/mpeg" });
     const audioUrl = URL.createObjectURL(blob);
 
     audioPlayer = new Audio(audioUrl);
