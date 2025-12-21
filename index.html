@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
+  <!-- Viewport with safe-area support -->
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   />
+
   <title>The Vibe</title>
+
+  <!-- iOS status bar color fix -->
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <!-- UI Font -->
   <link
@@ -46,26 +53,4 @@
 
       <!-- Reading -->
       <section class="reading-card">
-        <h2 class="vibe-title glow-soft">TODAY’S VIBE</h2>
-        <p class="daily-reading" id="dailyReading">
-          Loading your daily vibe...
-        </p>
-      </section>
-
-      <!-- Actions -->
-      <div class="actions">
-        <button class="primary-btn" onclick="playHoroscopeAudio()">
-          🔮 Read My Horoscope
-        </button>
-
-        <button class="stop-btn" onclick="stopAudio()">
-          ✋ Stop Reading
-        </button>
-      </div>
-
-    </div>
-  </main>
-
-  <script src="script.js"></script>
-</body>
-</html>
+        <h2 class="vibe-title glow
