@@ -1,12 +1,10 @@
 [build]
 publish = "."
 command = ""
+environment = { NODE_VERSION = "18" }
 
 [functions]
 directory = "netlify/functions"
-
-[functions.environment]
-NETLIFY_USE_NODE_20 = "true"
 
 # =====================================
 # DAILY BACKGROUND PRE-GENERATION
@@ -16,6 +14,7 @@ schedule = "@daily"
 
 [functions."pre-generate-audio"]
 schedule = "@daily"
+
 
 
 
