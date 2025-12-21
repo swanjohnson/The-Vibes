@@ -1,13 +1,73 @@
+function todayISO() {
+  return new Date().toISOString().split("T")[0];
+}
+
+async function redisGet(key) {
+  const res = await fetch(
+    `${process.env.UPSTASH_REDIS_REST_URL}/get/${key}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`
+      }
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Redis GET failed:", res.status);
+    return null;
+  }
+
+  const json = await res.json();
+  return json?.result || null;
+}
+
+async function redisSet(key, value) {
+  const res = await fetch(
+    `${process.env.UPSTASH_REDIS_REST_URL}/set/${key}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(value)
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Redis SET failed:", res.status);
+  }
+}
+
+async function generateAudio(text) {
+  const res = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "tts-1-hd-1106",
+      voice: "alloy",
+      input: text,
+      format: "mp3"
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("OpenAI TTS failed:", err);
+    return null;
+  }
+
+  const buffer = await res.arrayBuffer();
+  return Buffer.from(buffer).toString("base64");
+}
+
 exports.handler = async (event) => {
-  console.log("🟢 TTS function invoked");
+  console.log("🟢 TTS invoked");
 
   try {
-    console.log("ENV CHECK:", {
-      hasOpenAI: !!process.env.OPENAI_API_KEY,
-      hasRedisURL: !!process.env.UPSTASH_REDIS_REST_URL,
-      hasRedisToken: !!process.env.UPSTASH_REDIS_REST_TOKEN
-    });
-
     if (event.httpMethod !== "POST") {
       return { statusCode: 405, body: "Method Not Allowed" };
     }
@@ -15,19 +75,68 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     const sign = body.sign?.toLowerCase();
 
-    console.log("SIGN RECEIVED:", sign);
-
     if (!sign) {
       return { statusCode: 400, body: "Missing sign" };
     }
 
-    throw new Error("FORCED STOP — ENV LOGGED");
+    const date = todayISO();
+    const audioKey = `audio:${sign}:${date}`;
+
+    // 1️⃣ Try cache
+    const cachedAudio = await redisGet(audioKey);
+    if (cachedAudio) {
+      console.log("🎧 Serving cached audio");
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+        body: cachedAudio,
+        isBase64Encoded: true
+      };
+    }
+
+    // 2️⃣ Fetch text from Grok
+    const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
+    const textRes = await fetch(`${baseUrl}/.netlify/functions/grok`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sign })
+    });
+
+    if (!textRes.ok) {
+      console.error("Failed to fetch Grok text:", textRes.status);
+      return { statusCode: 500, body: "Text fetch failed" };
+    }
+
+    const textData = await textRes.json();
+    const reading = textData?.reading;
+
+    if (!reading) {
+      console.error("No reading returned");
+      return { statusCode: 500, body: "No reading" };
+    }
+
+    // 3️⃣ Generate audio
+    const audioBase64 = await generateAudio(reading);
+    if (!audioBase64) {
+      return { statusCode: 500, body: "Audio generation failed" };
+    }
+
+    // 4️⃣ Cache audio
+    await redisSet(audioKey, audioBase64);
+
+    // 5️⃣ Return audio
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "audio/mpeg" },
+      body: audioBase64,
+      isBase64Encoded: true
+    };
 
   } catch (err) {
-    console.error("🔥 TTS DEBUG ERROR:", err.message);
+    console.error("🔥 TTS fatal error:", err);
     return {
       statusCode: 500,
-      body: err.message
+      body: "TTS failure"
     };
   }
 };
