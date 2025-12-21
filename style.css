@@ -49,13 +49,20 @@ body {
 ================================ */
 .app {
   position: relative;
-  z-index: 1; /* UI above video */
+  z-index: 1;
+
   min-height: 100svh;
   min-height: 100vh; /* fallback */
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+
+  /* THIS FIXES THE ISSUE */
+  padding:
+    calc(16px + env(safe-area-inset-top))
+    16px
+    calc(16px + env(safe-area-inset-bottom));
 }
 
 /* ===============================
