@@ -1,20 +1,21 @@
-// netlify/functions/tts.js
-// HARD ISOLATION TEST — NO FETCH, NO ENV, NO DEPENDENCIES
-
-// This is a tiny silent MP3 (valid audio/mpeg)
-const SILENT_MP3_BASE64 =
-  "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjMyLjEwMAAAAAAAAAAAAAAA//tQxAADB8AhSmxhAAAACAAADSAAAAETEFNRTMuOTlyAAAAAAA=";
+// STEP 1: fetch-only test (no Redis, no OpenAI)
 
 exports.handler = async () => {
-  console.log("✅ TTS ISOLATION FUNCTION EXECUTED");
+  console.log("🟢 TTS fetch-only test");
 
-  return {
-    statusCode: 200,
-    headers: {
-      "Content-Type": "audio/mpeg",
-      "Cache-Control": "no-store"
-    },
-    body: SILENT_MP3_BASE64,
-    isBase64Encoded: true
-  };
+  try {
+    const res = await fetch("https://example.com");
+    const text = await res.text();
+
+    return {
+      statusCode: 200,
+      body: `Fetch OK, length=${text.length}`
+    };
+  } catch (err) {
+    console.error("❌ FETCH FAILED:", err);
+    return {
+      statusCode: 500,
+      body: "Fetch failed"
+    };
+  }
 };
