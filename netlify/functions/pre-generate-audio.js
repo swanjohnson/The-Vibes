@@ -46,43 +46,51 @@ async function redisSet(key, value) {
   );
 }
 
-export const handler = async () => {
+export const handler = async (event) => {
   const today = todayISO();
   const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
 
-  console.log(`🔊 Pre-generating audio for ${today}`);
+  const batchIndex = Number(event.queryStringParameters?.batch || 0);
+  const batch = ZODIAC_BATCHES[batchIndex];
 
-  for (let i = 0; i < ZODIAC_BATCHES.length; i++) {
-    console.log(`🔁 Audio batch ${i + 1}/${ZODIAC_BATCHES.length}`);
+  if (!batch) {
+    return {
+      statusCode: 200,
+      body: "All audio batches complete"
+    };
+  }
 
-    for (const sign of ZODIAC_BATCHES[i]) {
-      try {
-        const res = await fetch(`${baseUrl}/.netlify/functions/grok`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sign, date: today })
-        });
+  console.log(`🔊 Generating audio batch ${batchIndex + 1}/4`);
 
-        const data = await res.json();
-        const reading = data?.reading;
+  for (const sign of batch) {
+    try {
+      const res = await fetch(`${baseUrl}/.netlify/functions/grok`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sign, date: today })
+      });
 
-        if (!reading) {
-          console.error(`❌ No reading returned for ${sign}`);
-          continue;
-        }
+      const data = await res.json();
+      const reading = data?.reading;
 
-        const audioKey = `audio:${sign}:${today}`;
-        const audioBase64 = await generateAudio(reading);
-
-        await redisSet(audioKey, audioBase64);
-        console.log(`🔊 Audio generated for ${sign}`);
-
-      } catch (err) {
-        console.error(`🔥 Audio error for ${sign}:`, err.message);
+      if (!reading) {
+        console.error(`❌ No reading for ${sign}`);
+        continue;
       }
+
+      const audioKey = `audio:${sign}:${today}`;
+      const audioBase64 = await generateAudio(reading);
+
+      await redisSet(audioKey, audioBase64);
+      console.log(`🔊 Audio generated for ${sign}`);
+
+    } catch (err) {
+      console.error(`🔥 Audio error for ${sign}:`, err.message);
     }
   }
 
-  console.log("🎉 Daily audio pre-generation complete");
-  return { statusCode: 200 };
+  return {
+    statusCode: 200,
+    body: `Batch ${batchIndex} complete`
+  };
 };
