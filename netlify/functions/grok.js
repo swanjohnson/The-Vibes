@@ -9,8 +9,14 @@ const API_KEY = process.env.XAI_API_KEY;
 
 exports.handler = async (event) => {
   try {
-    const sign =
-      (event.queryStringParameters?.sign || "virgo").toLowerCase();
+    // ✅ Accept sign from POST body OR query string
+    const body = event.body ? JSON.parse(event.body) : {};
+
+    const sign = (
+      body.sign ||
+      event.queryStringParameters?.sign ||
+      "virgo"
+    ).toLowerCase();
 
     const date = new Date().toISOString().split("T")[0];
     const cacheKey = `horoscope:${sign}:${date}`;
