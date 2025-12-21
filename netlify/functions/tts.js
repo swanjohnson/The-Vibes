@@ -1,3 +1,5 @@
+const { fetch } = require("undici");
+
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
@@ -12,17 +14,14 @@ async function redisGet(key) {
     }
   );
 
-  if (!res.ok) {
-    console.error("Redis GET failed:", res.status);
-    return null;
-  }
+  if (!res.ok) return null;
 
   const json = await res.json();
   return json?.result || null;
 }
 
 async function redisSet(key, value) {
-  const res = await fetch(
+  await fetch(
     `${process.env.UPSTASH_REDIS_REST_URL}/set/${key}`,
     {
       method: "POST",
@@ -33,10 +32,6 @@ async function redisSet(key, value) {
       body: JSON.stringify(value)
     }
   );
-
-  if (!res.ok) {
-    console.error("Redis SET failed:", res.status);
-  }
 }
 
 async function generateAudio(text) {
@@ -55,9 +50,7 @@ async function generateAudio(text) {
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    console.error("OpenAI TTS failed:", err);
-    return null;
+    throw new Error(await res.text());
   }
 
   const buffer = await res.arrayBuffer();
@@ -68,10 +61,6 @@ exports.handler = async (event) => {
   console.log("🟢 TTS invoked");
 
   try {
-    if (event.httpMethod !== "POST") {
-      return { statusCode: 405, body: "Method Not Allowed" };
-    }
-
     const body = JSON.parse(event.body || "{}");
     const sign = body.sign?.toLowerCase();
 
@@ -82,19 +71,18 @@ exports.handler = async (event) => {
     const date = todayISO();
     const audioKey = `audio:${sign}:${date}`;
 
-    // 1️⃣ Try cache
-    const cachedAudio = await redisGet(audioKey);
-    if (cachedAudio) {
-      console.log("🎧 Serving cached audio");
+    // Cache first
+    const cached = await redisGet(audioKey);
+    if (cached) {
       return {
         statusCode: 200,
         headers: { "Content-Type": "audio/mpeg" },
-        body: cachedAudio,
+        body: cached,
         isBase64Encoded: true
       };
     }
 
-    // 2️⃣ Fetch text from Grok
+    // Fetch text
     const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
     const textRes = await fetch(`${baseUrl}/.netlify/functions/grok`, {
       method: "POST",
@@ -102,41 +90,26 @@ exports.handler = async (event) => {
       body: JSON.stringify({ sign })
     });
 
-    if (!textRes.ok) {
-      console.error("Failed to fetch Grok text:", textRes.status);
-      return { statusCode: 500, body: "Text fetch failed" };
-    }
-
     const textData = await textRes.json();
     const reading = textData?.reading;
 
     if (!reading) {
-      console.error("No reading returned");
       return { statusCode: 500, body: "No reading" };
     }
 
-    // 3️⃣ Generate audio
-    const audioBase64 = await generateAudio(reading);
-    if (!audioBase64) {
-      return { statusCode: 500, body: "Audio generation failed" };
-    }
+    // Generate audio
+    const audio = await generateAudio(reading);
+    await redisSet(audioKey, audio);
 
-    // 4️⃣ Cache audio
-    await redisSet(audioKey, audioBase64);
-
-    // 5️⃣ Return audio
     return {
       statusCode: 200,
       headers: { "Content-Type": "audio/mpeg" },
-      body: audioBase64,
+      body: audio,
       isBase64Encoded: true
     };
 
   } catch (err) {
-    console.error("🔥 TTS fatal error:", err);
-    return {
-      statusCode: 500,
-      body: "TTS failure"
-    };
+    console.error("🔥 TTS error:", err);
+    return { statusCode: 500, body: "TTS failure" };
   }
 };
