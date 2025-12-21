@@ -61,7 +61,7 @@ async function generateAudio(text) {
   return Buffer.from(buffer).toString("base64");
 }
 
-export async function handler(event) {
+exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") {
       return { statusCode: 405, body: "Method Not Allowed" };
@@ -77,7 +77,7 @@ export async function handler(event) {
     const date = todayISO();
     const audioKey = `audio:${sign}:${date}`;
 
-    // 1️⃣ Cache first
+    // 1️⃣ Try cache
     const cachedAudio = await redisGet(audioKey);
     if (cachedAudio) {
       return {
@@ -88,7 +88,7 @@ export async function handler(event) {
       };
     }
 
-    // 2️⃣ Get text from Grok
+    // 2️⃣ Fetch text
     const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
     const textRes = await fetch(`${baseUrl}/.netlify/functions/grok`, {
       method: "POST",
@@ -125,7 +125,7 @@ export async function handler(event) {
     console.error("TTS FUNCTION ERROR:", err);
     return {
       statusCode: 500,
-      body: "TTS failure"
+      body: err.message || "TTS failure"
     };
   }
-}
+};
