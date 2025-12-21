@@ -1,90 +1,47 @@
-import { Redis } from "@upstash/redis";
+import fetch from "node-fetch";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-export const handler = async (event) => {
+async function redisGet(key) {
+  const res = await fetch(`${REDIS_URL}/get/${key}`, {
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}` }
+  });
+  const json = await res.json();
+  return json?.result || null;
+}
+
+export async function handler(event) {
   try {
-    const { sign, date, text } = JSON.parse(event.body || "{}");
-
-    if (!sign || !date || !text) {
-      return {
-        statusCode: 400,
-        body: "Missing sign, date, or text",
-      };
+    if (event.httpMethod !== "POST") {
+      return { statusCode: 405, body: "Method Not Allowed" };
     }
 
-    const audioKey = `audio:${sign}:${date}`;
+    const { sign, date } = JSON.parse(event.body || "{}");
 
-    /* ============================
-       CHECK AUDIO CACHE
-    ============================ */
-    const cachedAudio = await redis.get(audioKey);
-    if (cachedAudio) {
-      return {
-        statusCode: 200,
-        headers: {
-          "Content-Type": "audio/mpeg",
-          "Cache-Control": "public, max-age=86400",
-        },
-        body: cachedAudio,
-        isBase64Encoded: true,
-      };
+    if (!sign || !date) {
+      return { statusCode: 400, body: "Missing sign or date" };
     }
 
-    /* ============================
-       GENERATE AUDIO (ElevenLabs)
-    ============================ */
-    const elevenRes = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVEN_VOICE_ID}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "xi-api-key": process.env.ELEVEN_API_KEY,
-        },
-        body: JSON.stringify({
-          text,
-          model_id: "eleven_flash_v2",
-          voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.8,
-          },
-        }),
-      }
-    );
+    const cacheKey = `audio:${sign}:${date}`;
+    const audioBase64 = await redisGet(cacheKey);
 
-    if (!elevenRes.ok) {
-      const errText = await elevenRes.text();
-      throw new Error(`ElevenLabs error: ${errText}`);
+    if (!audioBase64) {
+      return { statusCode: 404, body: "Audio not ready yet" };
     }
-
-    const buffer = Buffer.from(await elevenRes.arrayBuffer());
-    const base64Audio = buffer.toString("base64");
-
-    /* ============================
-       SAVE AUDIO FOR THE DAY
-    ============================ */
-    await redis.set(audioKey, base64Audio, {
-      ex: 60 * 60 * 24, // 24 hours
-    });
 
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=86400",
+        "Cache-Control": "public, max-age=31536000"
       },
-      body: base64Audio,
-      isBase64Encoded: true,
+      body: audioBase64,
+      isBase64Encoded: true
     };
+
   } catch (err) {
-    console.error("TTS error:", err);
-    return {
-      statusCode: 500,
-      body: "Audio generation failed",
-    };
+    console.error("TTS serve error:", err);
+    return { statusCode: 500, body: "Server error" };
   }
-};
+}
