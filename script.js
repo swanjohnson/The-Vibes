@@ -35,29 +35,32 @@ async function loadDailyHoroscope() {
 }
 
 /* ===============================
-   AUDIO (FIXED)
+   AUDIO (FINAL + WORKING)
 ================================ */
 async function playHoroscopeAudio() {
   try {
     stopAudio();
 
-    const text = document.getElementById("dailyReading")?.innerText;
-    const sign = document.getElementById("signName")?.innerText?.toLowerCase();
-    const date = new Date().toISOString().split("T")[0];
+    const sign = document
+      .getElementById("signName")
+      ?.innerText?.toLowerCase();
 
-    if (!text || !sign) return;
+    if (!sign) return;
 
-    const res = await fetch("/.netlify/functions/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sign, date, text })
-    });
+    // ✅ GET request with query param (matches working backend)
+    const res = await fetch(
+      `/.netlify/functions/tts?sign=${encodeURIComponent(sign)}`
+    );
 
     if (!res.ok) throw new Error("Audio failed");
 
     const blob = await res.blob();
-    audioPlayer = new Audio(URL.createObjectURL(blob));
-    audioPlayer.play();
+    const audioUrl = URL.createObjectURL(blob);
+
+    audioPlayer = new Audio(audioUrl);
+
+    // iOS-safe playback
+    await audioPlayer.play();
 
   } catch (err) {
     console.error("Audio error:", err);

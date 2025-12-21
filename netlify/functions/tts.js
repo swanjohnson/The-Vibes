@@ -13,7 +13,6 @@ async function redisGet(key) {
   );
 
   if (!res.ok) return null;
-
   const json = await res.json();
   return json?.result || null;
 }
@@ -33,11 +32,11 @@ async function redisSet(key, value) {
 }
 
 exports.handler = async (event) => {
-  console.log("🟢 TTS production invoked");
-
   try {
-    const body = JSON.parse(event.body || "{}");
-    const sign = body.sign?.toLowerCase();
+    // ✅ Accept GET or POST
+    const sign =
+      event.queryStringParameters?.sign ||
+      (event.body ? JSON.parse(event.body).sign : null);
 
     if (!sign) {
       return { statusCode: 400, body: "Missing sign" };
@@ -49,7 +48,6 @@ exports.handler = async (event) => {
     // 1️⃣ Cache first
     const cached = await redisGet(audioKey);
     if (cached) {
-      console.log("🎧 Serving cached audio");
       return {
         statusCode: 200,
         headers: { "Content-Type": "audio/mpeg" },
@@ -68,7 +66,6 @@ exports.handler = async (event) => {
 
     const textData = await textRes.json();
     const reading = textData?.reading;
-
     if (!reading) {
       return { statusCode: 500, body: "No reading" };
     }
@@ -91,11 +88,10 @@ exports.handler = async (event) => {
     const buffer = await ttsRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
 
-    // 4️⃣ Cache EXACT base64
+    // 4️⃣ Cache
     await redisSet(audioKey, base64);
-    console.log("💾 Cached audio:", audioKey);
 
-    // 5️⃣ Return audio
+    // 5️⃣ Return
     return {
       statusCode: 200,
       headers: { "Content-Type": "audio/mpeg" },
@@ -104,7 +100,7 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
-    console.error("🔥 TTS error:", err);
+    console.error("TTS error:", err);
     return { statusCode: 500, body: "TTS failure" };
   }
 };
