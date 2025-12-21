@@ -20,7 +20,7 @@ body {
 }
 
 /* ===============================
-   VIDEO BACKGROUND (WORKING)
+   VIDEO BACKGROUND
 ================================ */
 .video-bg {
   position: fixed;
@@ -35,7 +35,6 @@ body {
   object-fit: cover;
 }
 
-/* Subtle darkening overlay */
 .video-bg::after {
   content: "";
   position: absolute;
@@ -52,7 +51,7 @@ body {
   z-index: 1;
 
   min-height: 100svh;
-  min-height: 100vh; /* fallback */
+  min-height: 100vh;
 
   display: flex;
   align-items: center;
@@ -79,13 +78,26 @@ body {
     0 0 28px rgba(160, 110, 255, 0.35),
     inset 0 0 0 1px rgba(190, 140, 255, 0.25);
 
+  /* Optical centering */
   transform: translateY(-2vh);
   will-change: transform;
+
+  /* CRITICAL FIX: allow internal scroll */
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar (still scrollable) */
+.vibe-card::-webkit-scrollbar {
+  display: none;
 }
 
 @media (min-width: 768px) {
   .vibe-card {
     transform: translateY(0);
+    max-height: none;
+    overflow: visible;
   }
 }
 
