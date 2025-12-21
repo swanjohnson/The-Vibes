@@ -82,7 +82,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "tts-1-hd-1106",
-        voice: "alloy",
+        voice: "shimmer",
         input: cachedText.reading,
         format: "mp3"
       })
