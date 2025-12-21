@@ -39,15 +39,21 @@ async function playHoroscopeAudio() {
       `/.netlify/functions/tts?sign=${sign}`
     );
 
-    if (!res.ok) throw new Error("Audio failed");
+    if (!res.ok) throw new Error("Audio fetch failed");
 
-    // 🔑 CRITICAL FIX: trim base64
     const base64 = (await res.text()).trim();
 
-    audioPlayer = new Audio(
-      `data:audio/mpeg;base64,${base64}`
-    );
+    // 🔑 BULLETPROOF FIX: base64 → Blob
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
 
+    const blob = new Blob([bytes], { type: "audio/mpeg" });
+    const audioUrl = URL.createObjectURL(blob);
+
+    audioPlayer = new Audio(audioUrl);
     await audioPlayer.play();
 
   } catch (err) {
