@@ -1,133 +1,46 @@
-function todayISO() {
-  return new Date().toISOString().split("T")[0];
-}
-
-async function redisGet(key) {
-  const res = await fetch(
-    `${process.env.UPSTASH_REDIS_REST_URL}/get/${key}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`
-      }
-    }
-  );
-
-  if (!res.ok) return null;
-
-  const json = await res.json();
-  return json?.result || null;
-}
-
-async function redisSet(key, value) {
-  await fetch(
-    `${process.env.UPSTASH_REDIS_REST_URL}/set/${key}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(value)
-    }
-  );
-}
-
-async function generateAudio(text) {
-  const res = await fetch("https://api.openai.com/v1/audio/speech", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "tts-1-hd-1106",
-      voice: "alloy",
-      input: text,
-      format: "mp3"
-    })
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    console.error("❌ OpenAI TTS error:", err);
-    return null;
-  }
-
-  const buffer = await res.arrayBuffer();
-  return Buffer.from(buffer).toString("base64");
-}
-
-exports.handler = async (event) => {
-  console.log("🟢 TTS production invoked");
+exports.handler = async () => {
+  console.log("🟢 TTS direct-return test");
 
   try {
-    if (event.httpMethod !== "POST") {
-      return { statusCode: 405, body: "Method Not Allowed" };
-    }
-
-    const body = JSON.parse(event.body || "{}");
-    const sign = body.sign?.toLowerCase();
-
-    if (!sign) {
-      return { statusCode: 400, body: "Missing sign" };
-    }
-
-    const date = todayISO();
-    const audioKey = `audio:${sign}:${date}`;
-
-    // 1️⃣ Serve cached audio if present
-    const cached = await redisGet(audioKey);
-    if (cached) {
-      console.log("🎧 Serving cached audio:", audioKey);
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "audio/mpeg" },
-        body: cached,
-        isBase64Encoded: true
-      };
-    }
-
-    // 2️⃣ Fetch text from Grok
-    const baseUrl = process.env.URL || process.env.DEPLOY_PRIME_URL;
-    const textRes = await fetch(`${baseUrl}/.netlify/functions/grok`, {
+    const res = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sign })
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "tts-1-hd-1106",
+        voice: "alloy",
+        input: "This is a direct audio return test from OpenAI text to speech.",
+        format: "mp3"
+      })
     });
 
-    if (!textRes.ok) {
-      console.error("❌ Failed to fetch Grok text");
-      return { statusCode: 500, body: "Text fetch failed" };
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("❌ OpenAI error:", err);
+      return { statusCode: 500, body: "OpenAI failed" };
     }
 
-    const textData = await textRes.json();
-    const reading = textData?.reading;
+    const buffer = await res.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
 
-    if (!reading) {
-      console.error("❌ No reading returned");
-      return { statusCode: 500, body: "No reading" };
-    }
+    console.log("🎧 Audio bytes:", buffer.byteLength);
 
-    // 3️⃣ Generate audio
-    const audioBase64 = await generateAudio(reading);
-    if (!audioBase64) {
-      return { statusCode: 500, body: "Audio generation failed" };
-    }
-
-    // 4️⃣ Cache audio
-    await redisSet(audioKey, audioBase64);
-    console.log("💾 Cached audio:", audioKey);
-
-    // 5️⃣ Return audio
     return {
       statusCode: 200,
-      headers: { "Content-Type": "audio/mpeg" },
-      body: audioBase64,
+      headers: {
+        "Content-Type": "audio/mpeg"
+      },
+      body: base64,
       isBase64Encoded: true
     };
 
   } catch (err) {
-    console.error("🔥 TTS fatal error:", err);
-    return { statusCode: 500, body: "TTS failure" };
+    console.error("🔥 TTS crash:", err);
+    return {
+      statusCode: 500,
+      body: "TTS exception"
+    };
   }
 };
