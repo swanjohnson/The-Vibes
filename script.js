@@ -1,4 +1,5 @@
 let isLoadingAudio = false;
+let currentHoroscopeDate = null;
 
 /**
  * Fetch and display today's horoscope text
@@ -14,21 +15,24 @@ async function loadDailyHoroscope() {
       `/.netlify/functions/get-daily?sign=${encodeURIComponent(sign)}`
     );
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch horoscope");
-    }
+    if (!res.ok) throw new Error("Failed to fetch horoscope");
 
     const data = await res.json();
+
+    // Store the authoritative date from backend
+    currentHoroscopeDate = data.date;
 
     const readingEl = document.getElementById("dailyReading");
     if (readingEl && data.reading) {
       readingEl.textContent = data.reading;
     }
+
   } catch (err) {
     console.error("Horoscope load error:", err);
     const readingEl = document.getElementById("dailyReading");
     if (readingEl) {
-      readingEl.textContent = "Today's vibe is still forming. Check back shortly.";
+      readingEl.textContent =
+        "Today's vibe is still forming. Check back shortly.";
     }
   }
 }
@@ -46,13 +50,14 @@ async function playHoroscopeAudio(sign, button) {
   }
 
   try {
-    const dateText = document.getElementById("currentDate")?.textContent;
-    if (!dateText) throw new Error("Date not found");
-
-    const date = new Date(dateText).toISOString().split("T")[0];
+    if (!currentHoroscopeDate) {
+      throw new Error("Horoscope date not loaded");
+    }
 
     const res = await fetch(
-      `/.netlify/functions/tts?sign=${encodeURIComponent(sign)}&date=${date}`
+      `/.netlify/functions/tts?sign=${encodeURIComponent(
+        sign
+      )}&date=${currentHoroscopeDate}`
     );
 
     if (!res.ok) throw new Error("Audio fetch failed");
@@ -77,6 +82,7 @@ async function playHoroscopeAudio(sign, button) {
     };
 
     await audio.play();
+
   } catch (err) {
     console.error("Audio error:", err);
     if (button) {
