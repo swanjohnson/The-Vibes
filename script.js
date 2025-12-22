@@ -1,7 +1,40 @@
 let isLoadingAudio = false;
 
 /**
- * Play cached horoscope audio (server-side cached, browser-safe playback)
+ * Fetch and display today's horoscope text
+ */
+async function loadDailyHoroscope() {
+  try {
+    const sign = document
+      .getElementById("signName")
+      .textContent
+      .toLowerCase();
+
+    const res = await fetch(
+      `/.netlify/functions/get-daily?sign=${encodeURIComponent(sign)}`
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch horoscope");
+    }
+
+    const data = await res.json();
+
+    const readingEl = document.getElementById("dailyReading");
+    if (readingEl && data.reading) {
+      readingEl.textContent = data.reading;
+    }
+  } catch (err) {
+    console.error("Horoscope load error:", err);
+    const readingEl = document.getElementById("dailyReading");
+    if (readingEl) {
+      readingEl.textContent = "Today's vibe is still forming. Check back shortly.";
+    }
+  }
+}
+
+/**
+ * Play cached horoscope audio
  */
 async function playHoroscopeAudio(sign, button) {
   if (isLoadingAudio) return;
@@ -13,11 +46,9 @@ async function playHoroscopeAudio(sign, button) {
   }
 
   try {
-    // Read the date exactly as shown in the UI
     const dateText = document.getElementById("currentDate")?.textContent;
-    if (!dateText) throw new Error("Date not found in UI");
+    if (!dateText) throw new Error("Date not found");
 
-    // Convert "Saturday, December 20" → YYYY-MM-DD (UTC-safe)
     const date = new Date(dateText).toISOString().split("T")[0];
 
     const res = await fetch(
@@ -26,10 +57,7 @@ async function playHoroscopeAudio(sign, button) {
 
     if (!res.ok) throw new Error("Audio fetch failed");
 
-    // IMPORTANT: read raw binary audio
     const arrayBuffer = await res.arrayBuffer();
-
-    // Create a fresh Blob and Audio element every time
     const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
     const audioUrl = URL.createObjectURL(blob);
     const audio = new Audio(audioUrl);
@@ -49,7 +77,6 @@ async function playHoroscopeAudio(sign, button) {
     };
 
     await audio.play();
-
   } catch (err) {
     console.error("Audio error:", err);
     if (button) {
@@ -61,9 +88,11 @@ async function playHoroscopeAudio(sign, button) {
 }
 
 /**
- * OPTIONAL: stop button support (safe no-op if no audio playing)
+ * Optional stop button (safe no-op)
  */
-function stopAudio() {
-  // This intentionally does nothing for now
-  // Audio is one-shot and cleaned up automatically
-}
+function stopAudio() {}
+
+/**
+ * Load horoscope on page load
+ */
+document.addEventListener("DOMContentLoaded", loadDailyHoroscope);
