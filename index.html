@@ -62,7 +62,13 @@
 
       <!-- Actions -->
       <div class="actions">
-        <button class="primary-btn" onclick="playHoroscopeAudio()">
+        <button
+          class="primary-btn"
+          onclick="playHoroscopeAudio(
+            document.getElementById('signName').textContent.toLowerCase(),
+            this
+          )"
+        >
           🔮 Read My Horoscope
         </button>
 

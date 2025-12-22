@@ -1,32 +1,31 @@
-const audioButton = document.getElementById("play-audio");
 let isLoadingAudio = false;
 
-async function playHoroscopeAudio(sign) {
+async function playHoroscopeAudio(sign, button) {
   if (isLoadingAudio) return;
   isLoadingAudio = true;
 
-  audioButton.disabled = true;
-  audioButton.textContent = "Loading audio…";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Loading audio…";
+  }
 
   try {
     const res = await fetch(`/.netlify/functions/tts?sign=${sign}`);
     if (!res.ok) throw new Error("Audio fetch failed");
 
-    // IMPORTANT: get raw binary, NOT text
+    // Get raw binary audio
     const arrayBuffer = await res.arrayBuffer();
 
-    // Create a fresh Blob every time
+    // Create fresh blob + audio every time
     const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
-
-    // Create a new audio element every time
-    const audio = new Audio();
-    audio.src = URL.createObjectURL(blob);
-    audio.preload = "auto";
+    const audio = new Audio(URL.createObjectURL(blob));
 
     audio.onended = () => {
       URL.revokeObjectURL(audio.src);
-      audioButton.disabled = false;
-      audioButton.textContent = "Read My Horoscope";
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Read My Horoscope";
+      }
       isLoadingAudio = false;
     };
 
@@ -39,8 +38,10 @@ async function playHoroscopeAudio(sign) {
 
   } catch (err) {
     console.error("Audio error:", err);
-    audioButton.disabled = false;
-    audioButton.textContent = "Read My Horoscope";
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Read My Horoscope";
+    }
     isLoadingAudio = false;
   }
 }
