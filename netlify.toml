@@ -6,16 +6,11 @@ environment = { NODE_VERSION = "18" }
 [functions]
 directory = "netlify/functions"
 
-# =====================================
-# DAILY TEXT PRE-GENERATION (IDEMPOTENT)
-# =====================================
-
+# CRON A (6 signs)
 [functions."pre-generate"]
 schedule = "@daily"
 
-# =====================================
-# DAILY AUDIO PRE-GENERATION (OPTIONAL)
-# =====================================
-
-[functions."pre-generate-audio"]
+# CRON B (6 signs)
+[functions."pre-generate-b"]
 schedule = "@daily"
+

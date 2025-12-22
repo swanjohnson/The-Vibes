@@ -7,6 +7,11 @@ const redis = new Redis({
 
 const API_KEY = process.env.XAI_API_KEY;
 
+const SIGNS = [
+  "libra", "scorpio", "sagittarius",
+  "capricorn", "aquarius", "pisces"
+];
+
 function todayUTC() {
   return new Date().toISOString().split("T")[0];
 }
@@ -25,8 +30,16 @@ async function generateHoroscope(sign) {
           role: "system",
           content: `
 You are Grok.
-Write a short, casual daily horoscope like the Grok app.
-End with a quick affirmation.
+
+Write a short, casual, one-paragraph daily horoscope in the same voice you use in the Grok app.
+
+Style:
+- 80–90 words
+- Conversational
+- No mystic jargon
+
+Ending:
+- Short affirmation
 `
         },
         {
@@ -41,39 +54,23 @@ End with a quick affirmation.
   return data?.choices?.[0]?.message?.content?.trim();
 }
 
-exports.handler = async (event) => {
-  const sign = event.queryStringParameters?.sign?.toLowerCase();
-  if (!sign) {
-    return { statusCode: 400, body: "Missing sign" };
-  }
-
+exports.handler = async () => {
   const date = todayUTC();
-  const key = `horoscope:${sign}:${date}`;
 
-  const existing = await redis.get(key);
-  if (existing?.reading) {
-    return {
-      statusCode: 200,
-      body: JSON.stringify(existing)
-    };
+  for (const sign of SIGNS) {
+    const key = `horoscope:${sign}:${date}`;
+
+    const existing = await redis.get(key);
+    if (existing?.reading) continue;
+
+    const reading = await generateHoroscope(sign);
+    if (!reading) continue;
+
+    await redis.set(key, { sign, date, reading });
   }
-
-  // 🔥 FALLBACK HEAL
-  const reading = await generateHoroscope(sign);
-  if (!reading) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        reading: "Today's vibe is still forming. Check back shortly."
-      })
-    };
-  }
-
-  const result = { sign, date, reading };
-  await redis.set(key, result);
 
   return {
     statusCode: 200,
-    body: JSON.stringify(result)
+    body: "Batch B complete"
   };
 };

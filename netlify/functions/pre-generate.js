@@ -8,9 +8,8 @@ const redis = new Redis({
 const API_KEY = process.env.XAI_API_KEY;
 
 const SIGNS = [
-  "aries", "taurus", "gemini", "cancer",
-  "leo", "virgo", "libra", "scorpio",
-  "sagittarius", "capricorn", "aquarius", "pisces"
+  "aries", "taurus", "gemini",
+  "cancer", "leo", "virgo"
 ];
 
 function todayUTC() {
@@ -35,27 +34,20 @@ You are Grok.
 Write a short, casual, one-paragraph daily horoscope in the same voice you use in the Grok app.
 
 Style:
-- Aim for roughly 80–90 words
-- Super conversational, like texting a friend
+- 80–90 words
+- Conversational, like texting a friend
 - Use contractions
-- A tiny bit of sass is okay
-- Everyday language only
-- No mystic or cosmic jargon
-- No fluff
+- Light sass
+- No mystic jargon
 
 Content:
-- Briefly touch on work or money
-- Briefly touch on love or relationships
-- Briefly touch on health, energy, or the body
+- Work or money
+- Love or relationships
+- Health or energy
 
 Ending:
-- End with a very short, two-second affirmation
-- Simple, believable, not cheesy
-
-Do not:
-- Use emojis
-- Use headings
-- Explain astrology
+- Short two-second affirmation
+- Encouraging, not cheesy
 `
         },
         {
@@ -72,32 +64,21 @@ Do not:
 
 exports.handler = async () => {
   const date = todayUTC();
-  const results = [];
 
   for (const sign of SIGNS) {
     const key = `horoscope:${sign}:${date}`;
 
     const existing = await redis.get(key);
-    if (existing?.reading) {
-      results.push({ sign, status: "exists" });
-      continue;
-    }
+    if (existing?.reading) continue;
 
     const reading = await generateHoroscope(sign);
-    if (!reading) {
-      results.push({ sign, status: "failed" });
-      continue;
-    }
+    if (!reading) continue;
 
     await redis.set(key, { sign, date, reading });
-    results.push({ sign, status: "generated" });
   }
 
   return {
     statusCode: 200,
-    body: JSON.stringify({
-      date,
-      results
-    })
+    body: "Batch A complete"
   };
 };
