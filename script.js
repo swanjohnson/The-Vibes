@@ -1,30 +1,44 @@
 let isLoadingAudio = false;
+let currentSign = null;
 let currentHoroscopeDate = null;
+let currentAudio = null;
 
 /**
- * Fetch and display today's horoscope text
+ * Fetch and display today's horoscope
  */
 async function loadDailyHoroscope() {
   try {
-    const sign = document
-      .getElementById("signName")
-      .textContent
-      .toLowerCase();
+    // Read sign from UI once (authoritative)
+    const signEl = document.getElementById("signName");
+    if (!signEl) throw new Error("Sign element not found");
+
+    currentSign = signEl.textContent.toLowerCase();
 
     const res = await fetch(
-      `/.netlify/functions/get-daily?sign=${encodeURIComponent(sign)}`
+      `/.netlify/functions/get-daily?sign=${encodeURIComponent(currentSign)}`
     );
 
     if (!res.ok) throw new Error("Failed to fetch horoscope");
 
     const data = await res.json();
 
-    // Store the authoritative date from backend
+    // Store authoritative values from backend
     currentHoroscopeDate = data.date;
 
+    // Update reading
     const readingEl = document.getElementById("dailyReading");
-    if (readingEl && data.reading) {
+    if (readingEl) {
       readingEl.textContent = data.reading;
+    }
+
+    // Update displayed date from backend date
+    const dateEl = document.getElementById("currentDate");
+    if (dateEl && data.date) {
+      const displayDate = new Date(data.date + "T00:00:00Z").toLocaleDateString(
+        undefined,
+        { weekday: "long", month: "long", day: "numeric" }
+      );
+      dateEl.textContent = displayDate;
     }
 
   } catch (err) {
@@ -50,13 +64,13 @@ async function playHoroscopeAudio(sign, button) {
   }
 
   try {
-    if (!currentHoroscopeDate) {
-      throw new Error("Horoscope date not loaded");
+    if (!currentSign || !currentHoroscopeDate) {
+      throw new Error("Horoscope not loaded yet");
     }
 
     const res = await fetch(
       `/.netlify/functions/tts?sign=${encodeURIComponent(
-        sign
+        currentSign
       )}&date=${currentHoroscopeDate}`
     );
 
@@ -65,10 +79,19 @@ async function playHoroscopeAudio(sign, button) {
     const arrayBuffer = await res.arrayBuffer();
     const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
     const audioUrl = URL.createObjectURL(blob);
+
+    // Stop any existing audio
+    if (currentAudio) {
+      currentAudio.pause();
+      URL.revokeObjectURL(currentAudio.src);
+    }
+
     const audio = new Audio(audioUrl);
+    currentAudio = audio;
 
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
+      currentAudio = null;
       if (button) {
         button.disabled = false;
         button.textContent = "Read My Horoscope";
@@ -78,6 +101,7 @@ async function playHoroscopeAudio(sign, button) {
 
     audio.onerror = () => {
       URL.revokeObjectURL(audioUrl);
+      currentAudio = null;
       throw new Error("Audio playback failed");
     };
 
@@ -94,11 +118,25 @@ async function playHoroscopeAudio(sign, button) {
 }
 
 /**
- * Optional stop button (safe no-op)
+ * Stop audio playback
  */
-function stopAudio() {}
+function stopAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+    URL.revokeObjectURL(currentAudio.src);
+    currentAudio = null;
+  }
+
+  const btn = document.querySelector(".primary-btn");
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Read My Horoscope";
+  }
+
+  isLoadingAudio = false;
+}
 
 /**
- * Load horoscope on page load
+ * Init on load
  */
 document.addEventListener("DOMContentLoaded", loadDailyHoroscope);
