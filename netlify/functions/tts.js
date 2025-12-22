@@ -17,12 +17,9 @@ async function redisGet(key) {
   const json = await res.json();
   if (!json?.result) return null;
 
+  // Normalize JSON vs string
   if (typeof json.result === "string") {
-    try {
-      return JSON.parse(json.result);
-    } catch {
-      return null;
-    }
+    return json.result;
   }
 
   return json.result;
@@ -53,9 +50,9 @@ exports.handler = async (event) => {
     const textKey = `horoscope:${sign}:${date}`;
     const audioKey = `audio:${sign}:${date}`;
 
-    // 1️⃣ Serve cached audio
+    // 1️⃣ Try cached audio (must be a string)
     const cachedAudio = await redisGet(audioKey);
-    if (cachedAudio) {
+    if (typeof cachedAudio === "string" && cachedAudio.length > 1000) {
       return {
         statusCode: 200,
         headers: { "Content-Type": "audio/mpeg" },
@@ -64,13 +61,32 @@ exports.handler = async (event) => {
       };
     }
 
-    // 2️⃣ Read cached text
-    const cachedText = await redisGet(textKey);
-    if (!cachedText?.reading) {
-      return {
-        statusCode: 500,
-        body: "Daily horoscope text not found"
-      };
+    // 2️⃣ Get cached text
+    const textRes = await fetch(
+      `${process.env.UPSTASH_REDIS_REST_URL}/get/${textKey}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`
+        }
+      }
+    );
+
+    if (!textRes.ok) {
+      throw new Error("Text fetch failed");
+    }
+
+    const textJson = await textRes.json();
+    if (!textJson?.result) {
+      throw new Error("No cached text");
+    }
+
+    const textObj =
+      typeof textJson.result === "string"
+        ? JSON.parse(textJson.result)
+        : textJson.result;
+
+    if (!textObj?.reading) {
+      throw new Error("Invalid text object");
     }
 
     // 3️⃣ Generate audio
@@ -82,8 +98,8 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "tts-1-hd-1106",
-        voice: "shimmer",
-        input: cachedText.reading,
+        voice: "alloy",
+        input: textObj.reading,
         format: "mp3"
       })
     });
@@ -91,12 +107,13 @@ exports.handler = async (event) => {
     if (!ttsRes.ok) {
       const err = await ttsRes.text();
       console.error("OpenAI TTS error:", err);
-      return { statusCode: 500, body: "TTS failed" };
+      throw new Error("TTS failed");
     }
 
     const buffer = await ttsRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
 
+    // 4️⃣ Cache fresh audio
     await redisSet(audioKey, base64);
 
     return {
@@ -107,7 +124,12 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
-    console.error("TTS fatal error:", err);
-    return { statusCode: 500, body: "TTS failure" };
+    console.error("🔥 TTS fatal:", err.message);
+
+    // Fail gracefully, never crash UI
+    return {
+      statusCode: 500,
+      body: "Audio unavailable"
+    };
   }
 };
