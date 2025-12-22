@@ -1,18 +1,40 @@
 let isLoadingAudio = false;
-let currentSign = null;
+let currentSign = "virgo";
 let currentHoroscopeDate = null;
 let currentAudio = null;
+
+const VALID_SIGNS = [
+  "aries", "taurus", "gemini", "cancer",
+  "leo", "virgo", "libra", "scorpio",
+  "sagittarius", "capricorn", "aquarius", "pisces"
+];
+
+/**
+ * Read sign from URL (?sign=libra), fallback to Virgo
+ */
+function getSignFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const sign = params.get("sign")?.toLowerCase();
+  return VALID_SIGNS.includes(sign) ? sign : "virgo";
+}
+
+/**
+ * Capitalize sign for display
+ */
+function formatSign(sign) {
+  return sign.charAt(0).toUpperCase() + sign.slice(1);
+}
 
 /**
  * Fetch and display today's horoscope
  */
 async function loadDailyHoroscope() {
   try {
-    // Read sign from UI once (authoritative)
-    const signEl = document.getElementById("signName");
-    if (!signEl) throw new Error("Sign element not found");
+    currentSign = getSignFromQuery();
 
-    currentSign = signEl.textContent.toLowerCase();
+    // Update UI sign immediately
+    const signEl = document.getElementById("signName");
+    if (signEl) signEl.textContent = formatSign(currentSign);
 
     const res = await fetch(
       `/.netlify/functions/get-daily?sign=${encodeURIComponent(currentSign)}`
@@ -22,14 +44,12 @@ async function loadDailyHoroscope() {
 
     const data = await res.json();
 
-    // Store authoritative values from backend
+    // Store authoritative backend date
     currentHoroscopeDate = data.date;
 
-    // Update reading
+    // Update reading text
     const readingEl = document.getElementById("dailyReading");
-    if (readingEl) {
-      readingEl.textContent = data.reading;
-    }
+    if (readingEl) readingEl.textContent = data.reading;
 
     // Update displayed date from backend date
     const dateEl = document.getElementById("currentDate");
@@ -54,7 +74,7 @@ async function loadDailyHoroscope() {
 /**
  * Play cached horoscope audio
  */
-async function playHoroscopeAudio(sign, button) {
+async function playHoroscopeAudio(_, button) {
   if (isLoadingAudio) return;
   isLoadingAudio = true;
 
@@ -137,6 +157,6 @@ function stopAudio() {
 }
 
 /**
- * Init on load
+ * Init
  */
 document.addEventListener("DOMContentLoaded", loadDailyHoroscope);

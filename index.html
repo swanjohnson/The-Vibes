@@ -47,9 +47,9 @@
         <img src="/logo.png" alt="The Vibe Logo" />
       </div>
 
-      <!-- Sign + Date -->
-      <h1 class="sign glow-text" id="signName">Virgo</h1>
-      <p class="date" id="currentDate">Saturday, December 20</p>
+      <!-- Sign + Date (filled dynamically) -->
+      <h1 class="sign glow-text" id="signName">—</h1>
+      <p class="date" id="currentDate">—</p>
 
       <!-- Reading -->
       <section class="reading-card">
@@ -64,10 +64,7 @@
       <div class="actions">
         <button
           class="primary-btn"
-          onclick="playHoroscopeAudio(
-            document.getElementById('signName').textContent.toLowerCase(),
-            this
-          )"
+          onclick="playHoroscopeAudio(null, this)"
         >
           🔮 Read My Horoscope
         </button>
