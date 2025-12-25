@@ -9,6 +9,21 @@ const VALID_SIGNS = [
   "sagittarius", "capricorn", "aquarius", "pisces"
 ];
 
+const SIGN_LABELS = {
+  aries: "Aries",
+  taurus: "Taurus",
+  gemini: "Gemini",
+  cancer: "Cancer",
+  leo: "Leo",
+  virgo: "Virgo",
+  libra: "Libra",
+  scorpio: "Scorpio",
+  sagittarius: "Sagittarius",
+  capricorn: "Capricorn",
+  aquarius: "Aquarius",
+  pisces: "Pisces"
+};
+
 /**
  * Read sign from URL (?sign=libra), fallback to Virgo
  */
@@ -19,22 +34,15 @@ function getSignFromQuery() {
 }
 
 /**
- * Capitalize sign for display
- */
-function formatSign(sign) {
-  return sign.charAt(0).toUpperCase() + sign.slice(1);
-}
-
-/**
  * Fetch and display today's horoscope
  */
 async function loadDailyHoroscope() {
   try {
     currentSign = getSignFromQuery();
 
-    // Update UI sign immediately
+    // Update sign label
     const signEl = document.getElementById("signName");
-    if (signEl) signEl.textContent = formatSign(currentSign);
+    if (signEl) signEl.textContent = SIGN_LABELS[currentSign];
 
     const res = await fetch(
       `/.netlify/functions/get-daily?sign=${encodeURIComponent(currentSign)}`
@@ -44,20 +52,24 @@ async function loadDailyHoroscope() {
 
     const data = await res.json();
 
-    // Store authoritative backend date
+    // Backend date is authoritative (CST)
     currentHoroscopeDate = data.date;
 
-    // Update reading text
+    // Reading text
     const readingEl = document.getElementById("dailyReading");
     if (readingEl) readingEl.textContent = data.reading;
 
-    // Update displayed date from backend date
+    // Display date — DO NOT interpret as UTC
     const dateEl = document.getElementById("currentDate");
     if (dateEl && data.date) {
-      const displayDate = new Date(data.date + "T00:00:00Z").toLocaleDateString(
-        undefined,
-        { weekday: "long", month: "long", day: "numeric" }
-      );
+      const displayDate = new Date(
+        data.date + "T12:00:00" // noon prevents timezone rollover
+      ).toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric"
+      });
+
       dateEl.textContent = displayDate;
     }
 
@@ -100,7 +112,7 @@ async function playHoroscopeAudio(_, button) {
     const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
     const audioUrl = URL.createObjectURL(blob);
 
-    // Stop any existing audio
+    // Stop existing audio
     if (currentAudio) {
       currentAudio.pause();
       URL.revokeObjectURL(currentAudio.src);
@@ -156,7 +168,4 @@ function stopAudio() {
   isLoadingAudio = false;
 }
 
-/**
- * Init
- */
 document.addEventListener("DOMContentLoaded", loadDailyHoroscope);

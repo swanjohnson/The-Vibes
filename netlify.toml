@@ -12,4 +12,8 @@ schedule = "0 6 * * *"
 [functions."pre-generate-b"]
 schedule = "5 6 * * *"
 
+[functions."pre-generate-c"]
+schedule = "10 6 * * *"
+
+
 
