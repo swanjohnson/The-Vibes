@@ -5,29 +5,32 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN
 });
 
-const API_KEY = process.env.XAI_API_KEY;
+const XAI_KEY = process.env.XAI_API_KEY;
 
-function todayUTC() {
-  return new Date().toISOString().split("T")[0];
+function todayCST() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
 }
 
-async function generateHoroscope(sign) {
-  const response = await fetch("https://api.x.ai/v1/chat/completions", {
+async function generate(sign) {
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`
+      Authorization: `Bearer ${XAI_KEY}`,
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       model: "grok-3-mini",
+      temperature: 1.1,
+      top_p: 0.95,
       messages: [
         {
           role: "system",
-          content: `
-You are Grok.
-Write a short, casual daily horoscope like the Grok app.
-End with a quick affirmation.
-`
+          content: process.env.GROK_PROMPT.replace("{SIGN}", sign)
         },
         {
           role: "user",
@@ -37,7 +40,7 @@ End with a quick affirmation.
     })
   });
 
-  const data = await response.json();
+  const data = await res.json();
   return data?.choices?.[0]?.message?.content?.trim();
 }
 
@@ -47,26 +50,20 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: "Missing sign" };
   }
 
-  const date = todayUTC();
+  const date = todayCST();
   const key = `horoscope:${sign}:${date}`;
 
-  const existing = await redis.get(key);
-  if (existing?.reading) {
+  const cached = await redis.get(key);
+  if (cached) {
     return {
       statusCode: 200,
-      body: JSON.stringify(existing)
+      body: JSON.stringify(cached)
     };
   }
 
-  // 🔥 FALLBACK HEAL
-  const reading = await generateHoroscope(sign);
+  const reading = await generate(sign);
   if (!reading) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        reading: "Today's vibe is still forming. Check back shortly."
-      })
-    };
+    return { statusCode: 500, body: "Generation failed" };
   }
 
   const result = { sign, date, reading };

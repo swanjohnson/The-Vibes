@@ -5,42 +5,33 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN
 });
 
-const API_KEY = process.env.XAI_API_KEY;
+const SIGNS = ["libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"];
+const XAI_KEY = process.env.XAI_API_KEY;
 
-const SIGNS = [
-  "libra", "scorpio", "sagittarius",
-  "capricorn", "aquarius", "pisces"
-];
-
-function todayUTC() {
-  return new Date().toISOString().split("T")[0];
+function todayCST() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
 }
 
-async function generateHoroscope(sign) {
-  const response = await fetch("https://api.x.ai/v1/chat/completions", {
+async function generate(sign) {
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`
+      Authorization: `Bearer ${XAI_KEY}`,
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       model: "grok-3-mini",
+      temperature: 1.1,
+      top_p: 0.95,
       messages: [
         {
           role: "system",
-          content: `
-You are Grok.
-
-Write a short, casual, one-paragraph daily horoscope in the same voice you use in the Grok app.
-
-Style:
-- 80–90 words
-- Conversational
-- No mystic jargon
-
-Ending:
-- Short affirmation
-`
+          content: process.env.GROK_PROMPT.replace("{SIGN}", sign)
         },
         {
           role: "user",
@@ -50,27 +41,22 @@ Ending:
     })
   });
 
-  const data = await response.json();
+  const data = await res.json();
   return data?.choices?.[0]?.message?.content?.trim();
 }
 
 exports.handler = async () => {
-  const date = todayUTC();
+  const date = todayCST();
 
   for (const sign of SIGNS) {
     const key = `horoscope:${sign}:${date}`;
+    if (await redis.get(key)) continue;
 
-    const existing = await redis.get(key);
-    if (existing?.reading) continue;
-
-    const reading = await generateHoroscope(sign);
+    const reading = await generate(sign);
     if (!reading) continue;
 
     await redis.set(key, { sign, date, reading });
   }
 
-  return {
-    statusCode: 200,
-    body: "Batch B complete"
-  };
+  return { statusCode: 200, body: "Pre-generate B complete" };
 };

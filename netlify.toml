@@ -6,11 +6,10 @@ environment = { NODE_VERSION = "18" }
 [functions]
 directory = "netlify/functions"
 
-# CRON A (6 signs)
 [functions."pre-generate"]
-schedule = "@daily"
+schedule = "0 6 * * *"
 
-# CRON B (6 signs)
 [functions."pre-generate-b"]
-schedule = "@daily"
+schedule = "5 6 * * *"
+
 
