@@ -11,12 +11,10 @@ html,
 body {
   width: 100%;
   min-height: 100svh;
-  overflow: hidden;
   font-family: "Inter", system-ui, sans-serif;
   color: #fff;
-
-  /* Matches iOS status bar + fallback */
   background-color: #12071f;
+  overflow: hidden;
 }
 
 /* ===============================
@@ -37,7 +35,7 @@ body {
   object-fit: cover;
 }
 
-/* Dark overlay */
+/* Dark overlay for readability */
 .video-bg::after {
   content: "";
   position: absolute;
@@ -46,7 +44,7 @@ body {
 }
 
 /* ===============================
-   APP LAYOUT
+   APP LAYOUT (ANCHOR TOP, NOT CENTER)
 ================================ */
 .app {
   position: relative;
@@ -54,17 +52,17 @@ body {
 
   min-height: 100svh;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: flex-start;
 
   padding:
-    calc(18px + env(safe-area-inset-top))
+    calc(24px + env(safe-area-inset-top))
     18px
-    calc(18px + env(safe-area-inset-bottom));
+    calc(32px + env(safe-area-inset-bottom));
 }
 
 /* ===============================
-   CARD (STRONGER GLOW)
+   CARD
 ================================ */
 .vibe-card {
   width: 100%;
@@ -79,7 +77,7 @@ body {
     0 0 42px rgba(150, 90, 255, 0.55),
     inset 0 0 0 1px rgba(210, 170, 255, 0.35);
 
-  max-height: calc(100svh - 36px);
+  max-height: calc(100svh - 64px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -156,7 +154,7 @@ body {
   gap: 16px;
 }
 
-/* Primary */
+/* Primary button */
 .primary-btn {
   background: linear-gradient(135deg, #b68cff, #d2b4ff);
   color: #2a0d44;
@@ -178,7 +176,7 @@ body {
   transform: scale(0.97);
 }
 
-/* Secondary */
+/* Stop button */
 .stop-btn {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(210, 170, 255, 0.45);
