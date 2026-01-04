@@ -8,8 +8,8 @@
 }
 
 /* IMPORTANT:
-   Do NOT lock overflow on body.
-   Let Safari manage scrolling.
+   Body must be transparent so
+   the video shows through
 */
 html,
 body {
@@ -17,19 +17,19 @@ body {
   min-height: 100%;
   font-family: "Inter", system-ui, sans-serif;
   color: #fff;
-  background-color: #12071f;
+  background: transparent;
 }
 
 /* ===============================
-   FIXED VIDEO BACKGROUND
-   (Always fills screen)
+   VIDEO BACKGROUND
+   (Correct iOS stacking)
 ================================ */
 .video-bg {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
+  z-index: 0;
   overflow: hidden;
 }
 
@@ -39,7 +39,7 @@ body {
   object-fit: cover;
 }
 
-/* Dark overlay for readability */
+/* Dark overlay */
 .video-bg::after {
   content: "";
   position: absolute;
@@ -48,14 +48,14 @@ body {
 }
 
 /* ===============================
-   APP LAYOUT
-   (Natural document flow)
+   APP LAYER
+   (Sits above video)
 ================================ */
 .app {
   position: relative;
   z-index: 1;
 
-  min-height: 100%;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
 
@@ -67,7 +67,6 @@ body {
 
 /* ===============================
    CARD
-   (No artificial height limits)
 ================================ */
 .vibe-card {
   width: 100%;
@@ -150,7 +149,6 @@ body {
   gap: 16px;
 }
 
-/* Primary */
 .primary-btn {
   background: linear-gradient(135deg, #b68cff, #d2b4ff);
   color: #2a0d44;
@@ -165,14 +163,13 @@ body {
     0 0 22px rgba(180, 120, 255, 0.75),
     0 10px 26px rgba(0, 0, 0, 0.35);
 
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.12s ease;
 }
 
 .primary-btn:active {
   transform: scale(0.97);
 }
 
-/* Stop */
 .stop-btn {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(210, 170, 255, 0.45);
@@ -182,6 +179,5 @@ body {
   padding: 15px 22px;
   cursor: pointer;
 
-  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
